@@ -36,6 +36,7 @@ import {
   RestoreResourceResultSchema,
   TrashListSchema,
 } from "./recovery.js";
+import { QuickOpenResultSchema, SearchResultPageSchema } from "./search.js";
 
 const healthSchema = z.toJSONSchema(HealthResponseSchema, { target: "draft-7" });
 const errorSchema = z.toJSONSchema(ApiErrorSchema, { target: "draft-7" });
@@ -84,6 +85,8 @@ const permanentDeleteResultSchema = z.toJSONSchema(PermanentDeleteResultSchema, 
   target: "draft-7",
 });
 const backgroundJobSchema = z.toJSONSchema(BackgroundJobSchema, { target: "draft-7" });
+const searchResultPageSchema = z.toJSONSchema(SearchResultPageSchema, { target: "draft-7" });
+const quickOpenResultSchema = z.toJSONSchema(QuickOpenResultSchema, { target: "draft-7" });
 
 const uuidPathParameter = {
   name: "id",
@@ -113,6 +116,52 @@ export const openApiDocument = {
   },
   servers: [{ url: "/api/v1" }],
   paths: {
+    "/search": {
+      get: {
+        operationId: "searchDocuments",
+        parameters: [
+          { name: "q", in: "query", required: true, schema: { type: "string", minLength: 1 } },
+          {
+            name: "scope",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["all", "folder", "subtree"], default: "all" },
+          },
+          {
+            name: "folderId",
+            in: "query",
+            required: false,
+            schema: { type: "string", format: "uuid" },
+          },
+          {
+            name: "includeCodeBlocks",
+            in: "query",
+            required: false,
+            schema: { type: "boolean", default: false },
+          },
+          { name: "cursor", in: "query", required: false, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": jsonResponse("Workspace-scoped ranked document results.", searchResultPageSchema),
+          "400": jsonResponse("Search query, scope or cursor is invalid.", errorSchema),
+          "404": jsonResponse("Scoped folder absent from this workspace.", errorSchema),
+        },
+      },
+    },
+    "/quick-open": {
+      get: {
+        operationId: "quickOpenDocuments",
+        parameters: [
+          { name: "q", in: "query", required: false, schema: { type: "string", default: "" } },
+        ],
+        responses: {
+          "200": jsonResponse(
+            "Small recency/name/path-ranked active document set.",
+            quickOpenResultSchema,
+          ),
+        },
+      },
+    },
     "/workspace": {
       get: {
         operationId: "getWorkspace",

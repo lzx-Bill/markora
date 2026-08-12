@@ -20,6 +20,6 @@ import { WorkspaceController } from "./workspace.controller.js";
     JobsController,
   ],
   providers: [ContentRepository, ContentService, VersionService, TrashService],
-  exports: [VersionService],
+  exports: [ContentRepository, VersionService],
 })
 export class ContentModule {}

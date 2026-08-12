@@ -5,10 +5,10 @@ the frozen V1 specification in [`markora-spec`](./markora-spec/README.md).
 
 ## Current status
 
-Phase 3 editor vertical slice: sanitized GFM/math/Mermaid rendering, Source/WYSIWYG/desktop Split,
-raw-block preservation, revision-guarded idempotent saves, protected conflict overwrite, versioned
-IndexedDB drafts, offline continuation and Review/Restore/Discard recovery. Phase 1 identity and
-Phase 2 workspace/content isolation remain enforced across every content route.
+Phase 5 search vertical slice: PostgreSQL hybrid English/CJK search, transactional indexes,
+workspace/folder/subtree scope isolation, progressive Search, Quick Open and route-valid Command
+Palette keyboard flows. Earlier identity, content, editor, versions and Trash guarantees remain
+enforced across every route.
 
 ## Repository map
 

@@ -18,12 +18,16 @@ import {
   FolderTreeSchema,
   type PermanentDeleteResult,
   PermanentDeleteResultSchema,
+  type QuickOpenResult,
+  QuickOpenResultSchema,
   type RestoreDocumentVersionResult,
   RestoreDocumentVersionResultSchema,
   type RestoreResourceResult,
   RestoreResourceResultSchema,
   type SaveDocumentContentResult,
   SaveDocumentContentResultSchema,
+  type SearchResultPage,
+  SearchResultPageSchema,
   type TrashList,
   TrashListSchema,
 } from "@markora/contracts";
@@ -204,4 +208,26 @@ export async function permanentlyDeleteTrashItem(
 
 export async function getJob(id: string): Promise<BackgroundJob> {
   return BackgroundJobSchema.parse(await request(`/jobs/${id}`));
+}
+
+export async function searchDocuments(input: {
+  q: string;
+  scope: "all" | "folder" | "subtree";
+  folderId?: string;
+  includeCodeBlocks: boolean;
+  cursor?: string;
+}): Promise<SearchResultPage> {
+  const query = new URLSearchParams({
+    q: input.q,
+    scope: input.scope,
+    includeCodeBlocks: String(input.includeCodeBlocks),
+  });
+  if (input.folderId) query.set("folderId", input.folderId);
+  if (input.cursor) query.set("cursor", input.cursor);
+  return SearchResultPageSchema.parse(await request(`/search?${query.toString()}`));
+}
+
+export async function quickOpenDocuments(q: string): Promise<QuickOpenResult> {
+  const query = new URLSearchParams({ q });
+  return QuickOpenResultSchema.parse(await request(`/quick-open?${query.toString()}`));
 }

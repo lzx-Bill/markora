@@ -11,6 +11,8 @@ import {
   revokeOtherSessions,
   revokeSession,
 } from "./auth-api.js";
+import { GlobalCommandCenter } from "./GlobalCommandCenter.js";
+import { SearchPage } from "./SearchPage.js";
 import { TrashPage } from "./TrashPage.js";
 import { GlobalRail, WorkspacePage } from "./WorkspacePage.js";
 
@@ -72,25 +74,32 @@ function AuthGate() {
     queryClient.setQueryData(["auth", "me"], null);
   };
   return (
-    <Routes>
-      <Route
-        path="/trash"
-        element={<TrashPage principal={principalQuery.data} onLogout={onLogout} />}
-      />
-      <Route
-        path="/"
-        element={<WorkspacePage principal={principalQuery.data} onLogout={onLogout} />}
-      />
-      <Route
-        path="/documents/:documentId"
-        element={<WorkspacePage principal={principalQuery.data} onLogout={onLogout} />}
-      />
-      <Route
-        path="/settings/sessions"
-        element={<SettingsShell principal={principalQuery.data} onLogout={onLogout} />}
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route
+          path="/trash"
+          element={<TrashPage principal={principalQuery.data} onLogout={onLogout} />}
+        />
+        <Route
+          path="/search"
+          element={<SearchPage principal={principalQuery.data} onLogout={onLogout} />}
+        />
+        <Route
+          path="/"
+          element={<WorkspacePage principal={principalQuery.data} onLogout={onLogout} />}
+        />
+        <Route
+          path="/documents/:documentId"
+          element={<WorkspacePage principal={principalQuery.data} onLogout={onLogout} />}
+        />
+        <Route
+          path="/settings/sessions"
+          element={<SettingsShell principal={principalQuery.data} onLogout={onLogout} />}
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <GlobalCommandCenter principal={principalQuery.data} />
+    </>
   );
 }
 

@@ -4,3 +4,4 @@ export * from "./errors.js";
 export * from "./health.js";
 export * from "./openapi.js";
 export * from "./recovery.js";
+export * from "./search.js";

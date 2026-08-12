@@ -1,0 +1,25 @@
+{
+  "id": "SRCH-003",
+  "status": "passed",
+  "priority": "P1",
+  "decision": "PostgreSQL hybrid simple-FTS plus pg_trgm substring search",
+  "corpus": {
+    "documents": 10000,
+    "cases": 7,
+    "iterationsPerCase": 40,
+    "languages": ["English", "Chinese", "Japanese"]
+  },
+  "thresholds": {
+    "hitAt5": 1,
+    "p95MsLessThan": 500
+  },
+  "results": {
+    "simpleFts": { "hitAt5": 0.42857142857142855, "p50Ms": 0.764, "p95Ms": 1.242, "p99Ms": 2.32 },
+    "trigram": { "hitAt5": 1, "p50Ms": 0.913, "p95Ms": 1.345, "p99Ms": 1.801 },
+    "hybrid": { "hitAt5": 1, "p50Ms": 0.986, "p95Ms": 1.33, "p99Ms": 1.7 }
+  },
+  "environment": "PostgreSQL 18.4 on x86_64-pc-linux-musl",
+  "reproduce": "Set DATABASE_URL to markora_test and run pnpm exec tsx database/benchmarks/search-benchmark.ts",
+  "adr": "docs/adr/0006-postgresql-hybrid-search.md",
+  "verifiedAt": "2026-08-13T00:06:00+08:00"
+}

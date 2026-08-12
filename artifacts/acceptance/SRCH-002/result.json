@@ -1,0 +1,15 @@
+{
+  "id": "SRCH-002",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/web/src/GlobalCommandCenter.test.tsx: shortcuts, focus return, stable Enter route and route-valid commands"
+  ],
+  "browser": "Real Chromium verified Ctrl+P Quick Open, Ctrl+K Command Palette, Ctrl+Shift+F Search, arrow selection, Enter activation, Escape close/focus return and Tab/Shift+Tab focus containment. Search context omitted Create/Editor commands; document context exposed both groups.",
+  "evidence": [
+    "output/playwright/phase5-quick-open.png",
+    "output/playwright/phase5-command-palette.png",
+    "output/playwright/phase5-command-search-context.png"
+  ],
+  "verifiedAt": "2026-08-13T00:06:00+08:00"
+}

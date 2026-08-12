@@ -107,3 +107,20 @@ the root unavailable and queues a durable job. `DELETE_BATCH_SIZE`, `JOB_LEASE_S
 `WORKER_POLL_MS` bound and schedule processing; expired leases are safe to reclaim after restart.
 App-level deletion does not remove existing database backups; production must apply the Phase 8
 backup retention and restore-runbook controls.
+
+## Search benchmark
+
+Phase 5 uses PostgreSQL `simple` full-text rank plus `pg_trgm` substring matching so English and
+CJK content share one transactionally updated provider. The migration installs the trusted
+extension and generated document indexes. Reproduce the OQ-010 decision only against the disposable
+integration database:
+
+```powershell
+$env:DATABASE_URL = "postgresql://markora:markora@localhost:27185/markora_test?schema=public"
+pnpm exec tsx database/benchmarks/search-benchmark.ts
+```
+
+The benchmark creates and removes an unlogged 10,000-document table. The accepted decision and
+recorded result are in `docs/adr/0006-postgresql-hybrid-search.md` and
+`artifacts/acceptance/SRCH-003/result.json`. Runtime shortcuts are Ctrl/Cmd+P for Quick Open,
+Ctrl/Cmd+Shift+F for Search and Ctrl/Cmd+K for Command Palette.

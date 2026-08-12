@@ -1,0 +1,13 @@
+{
+  "id": "SRCH-001",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts: names, paths, Markdown, folder/subtree scope, code preference, pagination and update freshness",
+    "apps/api/integration/content.integration.spec.ts: foreign workspace, trashed document and foreign folder isolation"
+  ],
+  "database": "Real PostgreSQL 18.4 with generated search columns, GIN FTS/trigram indexes and workspace-scoped recursive ancestry queries; 29 API integration tests passed, including unauthenticated access, foreign scope, literal wildcard and malformed cursor rejection.",
+  "browser": "Real Chromium searched the CJK phrase 分布式系统 and displayed the stable document route, /Research path, snippet and body match hint.",
+  "evidence": ["output/playwright/phase5-cjk-search.png"],
+  "verifiedAt": "2026-08-13T00:06:00+08:00"
+}

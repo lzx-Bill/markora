@@ -102,6 +102,36 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
     }
   }, [documentQuery.data]);
 
+  useEffect(() => {
+    const onCommand = (event: Event) => {
+      const command = (event as CustomEvent<string>).detail;
+      setActionError(null);
+      if (command === "new-document") setAction({ kind: "create-document" });
+      if (command === "new-folder") setAction({ kind: "create-folder" });
+    };
+    window.addEventListener("markora:workspace-command", onCommand);
+    return () => window.removeEventListener("markora:workspace-command", onCommand);
+  }, []);
+
+  useEffect(() => {
+    const onOpenDocument = (event: Event) => {
+      const openEvent = event as CustomEvent<string>;
+      openEvent.preventDefault();
+      if (
+        unsyncedDocumentId &&
+        unsyncedDocumentId !== openEvent.detail &&
+        !window.confirm(
+          "This document has an unsynced local draft. Leave it open in local recovery storage and continue?",
+        )
+      ) {
+        return;
+      }
+      navigate(`/documents/${openEvent.detail}`);
+    };
+    window.addEventListener("markora:open-document", onOpenDocument);
+    return () => window.removeEventListener("markora:open-document", onOpenDocument);
+  }, [navigate, unsyncedDocumentId]);
+
   const invalidateNavigation = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["folders", "tree"] }),
@@ -559,7 +589,7 @@ export function GlobalRail({
 }: {
   readonly principal: Principal;
   readonly onLogout: () => void | Promise<void>;
-  readonly current: "documents" | "trash" | "settings";
+  readonly current: "documents" | "search" | "trash" | "settings";
   readonly onNewDocument?: () => void;
 }) {
   return (
@@ -584,9 +614,13 @@ export function GlobalRail({
           </Link>
         </li>
         <li>
-          <a href="#search" aria-label="Search">
+          <Link
+            className={current === "search" ? "active" : undefined}
+            to="/search"
+            aria-label="Search"
+          >
             ⌕ <span>Search</span>
-          </a>
+          </Link>
         </li>
         <li>
           <Link

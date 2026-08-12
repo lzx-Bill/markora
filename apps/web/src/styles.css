@@ -954,6 +954,252 @@ button {
   grid-template-columns: 178px minmax(0, 1fr);
 }
 
+.search-layout {
+  grid-template-columns: 178px minmax(0, 1fr);
+}
+
+.search-surface {
+  min-width: 0;
+  overflow: auto;
+  padding: clamp(28px, 5vw, 64px);
+}
+
+.search-header,
+.search-form,
+.search-surface > section,
+.search-message,
+.search-surface > [role="status"] {
+  max-width: 900px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.search-header h1 {
+  margin: 8px 0;
+  font-family: var(--mk-font-reading);
+  font-size: clamp(36px, 5vw, 56px);
+}
+
+.search-header > p:last-child,
+.search-count,
+.search-message {
+  color: var(--mk-text-muted);
+}
+
+.search-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 30px;
+  border: 1px solid var(--mk-border);
+  border-radius: var(--mk-radius-md);
+  padding: 20px;
+  background: var(--mk-paper);
+  box-shadow: var(--mk-shadow-paper);
+}
+
+.search-form > label,
+.search-filters label {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.search-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.search-input-row input,
+.search-filters select,
+.command-dialog input {
+  width: 100%;
+  border: 1px solid var(--mk-border-strong);
+  border-radius: 10px;
+  padding: 11px 12px;
+  background: var(--mk-panel-strong);
+  color: var(--mk-text);
+  font: inherit;
+}
+
+.search-input-row input:focus,
+.search-filters select:focus,
+.command-dialog input:focus {
+  outline: none;
+  border-color: var(--mk-accent);
+  box-shadow: var(--mk-focus);
+}
+
+.search-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.search-filters label:not(.search-checkbox) {
+  display: grid;
+  flex: 1 1 190px;
+  gap: 6px;
+}
+
+.search-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.search-checkbox input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--mk-accent);
+}
+
+.search-message {
+  margin-top: 26px;
+  border: 1px dashed var(--mk-border-strong);
+  border-radius: var(--mk-radius-md);
+  padding: 24px;
+  text-align: center;
+}
+
+.search-message p {
+  margin-bottom: 0;
+}
+
+.search-results {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.search-results a {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--mk-border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: var(--mk-paper);
+  color: inherit;
+  text-decoration: none;
+}
+
+.search-results a:hover {
+  border-color: var(--mk-accent);
+}
+
+.search-results span,
+.search-results small {
+  color: var(--mk-text-muted);
+  font-size: 12px;
+}
+
+.search-results p {
+  margin: 4px 0;
+  line-height: 1.55;
+}
+
+.search-more {
+  display: block;
+  margin: 18px auto 0;
+}
+
+.command-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: start center;
+  padding: min(16vh, 140px) 20px 20px;
+  background: rgb(20 25 40 / 42%);
+  backdrop-filter: blur(4px);
+}
+
+.command-dialog {
+  width: min(680px, 100%);
+  overflow: hidden;
+  border: 1px solid var(--mk-border-strong);
+  border-radius: 16px;
+  background: var(--mk-paper);
+  box-shadow: 0 28px 80px rgb(20 25 40 / 28%);
+}
+
+.command-dialog > header,
+.command-dialog > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  color: var(--mk-text-muted);
+  font-size: 12px;
+}
+
+.command-dialog > header strong {
+  color: var(--mk-text);
+  font-size: 14px;
+}
+
+.command-dialog kbd {
+  border: 1px solid var(--mk-border);
+  border-radius: 6px;
+  padding: 3px 6px;
+  background: var(--mk-panel-strong);
+}
+
+.command-dialog > input {
+  width: calc(100% - 24px);
+  margin: 0 12px 10px;
+  font-size: 17px;
+}
+
+.command-results {
+  max-height: min(52vh, 430px);
+  overflow-y: auto;
+  border-top: 1px solid var(--mk-border);
+  border-bottom: 1px solid var(--mk-border);
+  padding: 8px;
+}
+
+.command-results button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 0;
+  border-radius: 9px;
+  padding: 11px 12px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.command-results button[aria-selected="true"] {
+  background: var(--mk-accent-soft);
+  color: var(--mk-accent);
+}
+
+.command-results button > span:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.command-results small,
+.command-results button > span:last-child,
+.command-results > p {
+  color: var(--mk-text-muted);
+  font-size: 11px;
+}
+
+.command-results > p {
+  padding: 18px;
+  text-align: center;
+}
+
 .trash-card {
   max-width: 960px;
 }

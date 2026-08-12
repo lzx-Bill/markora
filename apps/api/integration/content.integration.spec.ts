@@ -570,6 +570,206 @@ describe("Phase 4 versions and recovery", () => {
   });
 });
 
+describe("Phase 5 PostgreSQL search", () => {
+  it("searches names, paths and Markdown with direct-folder/subtree scopes and code exclusion", async () => {
+    const { agent } = await authenticatedWorkspace();
+    const research = await createFolder(agent, null, "研究");
+    const child = await createFolder(agent, research.id, "系统");
+    const other = await createFolder(agent, null, "Other");
+    const parentDocument = await createDocument(
+      agent,
+      research.id,
+      "知识库.md",
+      "分布式系统的一致性协议。\n```ts\nconst value = `secretCodeNeedle`;\n```",
+    );
+    const childDocument = await createDocument(agent, child.id, "恢复.md", "故障恢复与一致性");
+    await createDocument(agent, other.id, "Unrelated.md", "ordinary notes");
+
+    const cjk = await agent.get("/api/v1/search").query({ q: "分布式", scope: "all" }).expect(200);
+    expect(cjk.body.data[0]).toMatchObject({
+      documentId: parentDocument.id,
+      path: "/研究/知识库.md",
+      matchHints: expect.arrayContaining(["body"]),
+    });
+    expect(cjk.body.data[0].snippet).toContain("分布式");
+
+    const direct = await agent
+      .get("/api/v1/search")
+      .query({ q: "一致性", scope: "folder", folderId: research.id })
+      .expect(200);
+    expect(direct.body.data.map((item: { documentId: string }) => item.documentId)).toEqual([
+      parentDocument.id,
+    ]);
+    const subtree = await agent
+      .get("/api/v1/search")
+      .query({ q: "一致性", scope: "subtree", folderId: research.id })
+      .expect(200);
+    expect(
+      new Set(subtree.body.data.map((item: { documentId: string }) => item.documentId)),
+    ).toEqual(new Set([parentDocument.id, childDocument.id]));
+
+    const pathMatch = await agent
+      .get("/api/v1/search")
+      .query({ q: "研究", scope: "all" })
+      .expect(200);
+    expect(pathMatch.body.data).toEqual(
+      expect.arrayContaining([expect.objectContaining({ documentId: childDocument.id })]),
+    );
+
+    const excluded = await agent
+      .get("/api/v1/search")
+      .query({ q: "const value", scope: "all", includeCodeBlocks: "false" })
+      .expect(200);
+    expect(excluded.body.data).toHaveLength(0);
+    const included = await agent
+      .get("/api/v1/search")
+      .query({ q: "const value", scope: "all", includeCodeBlocks: "true" })
+      .expect(200);
+    expect(included.body.data[0]).toMatchObject({
+      documentId: parentDocument.id,
+      matchHints: ["code"],
+    });
+  });
+
+  it("updates indexes with document saves, paginates and never leaks foreign content", async () => {
+    const { agent, workspaceId } = await authenticatedWorkspace();
+    const document = await createDocument(agent, null, "Live.md", "before-index-update");
+    await agent
+      .put(`/api/v1/documents/${document.id}/content`)
+      .set("Origin", origin)
+      .send({
+        markdown: "after-index-update-needle",
+        baseRevision: 1,
+        clientMutationId: randomUUID(),
+      })
+      .expect(200);
+    const updated = await agent
+      .get("/api/v1/search")
+      .query({ q: "after-index-update-needle", scope: "all" })
+      .expect(200);
+    expect(updated.body.data[0].documentId).toBe(document.id);
+
+    await database.$executeRaw`
+      INSERT INTO documents (workspace_id, name, normalized_name, markdown, updated_at)
+      SELECT ${workspaceId}::uuid,
+        'Paged ' || lpad(value::text, 2, '0') || '.md',
+        'paged ' || lpad(value::text, 2, '0') || '.md',
+        'pagination-needle',
+        now()
+      FROM generate_series(1, 55) value
+    `;
+    const first = await agent
+      .get("/api/v1/search")
+      .query({ q: "pagination-needle", scope: "all" })
+      .expect(200);
+    expect(first.body.data).toHaveLength(50);
+    expect(first.body.nextCursor).toBeTypeOf("string");
+    const second = await agent
+      .get("/api/v1/search")
+      .query({ q: "pagination-needle", scope: "all", cursor: first.body.nextCursor })
+      .expect(200);
+    expect(second.body.data).toHaveLength(5);
+    expect(second.body.nextCursor).toBeNull();
+    expect(
+      new Set(
+        [...first.body.data, ...second.body.data].map(
+          (item: { documentId: string }) => item.documentId,
+        ),
+      ).size,
+    ).toBe(55);
+
+    const other = await createOtherWorkspace();
+    await database.document.create({
+      data: {
+        workspaceId: other.workspaceId,
+        markdown: "foreign-private-needle",
+        ...naming.validate("Foreign-search.md", "document"),
+      },
+    });
+    const isolated = await agent
+      .get("/api/v1/search")
+      .query({ q: "foreign-private-needle", scope: "all" })
+      .expect(200);
+    expect(isolated.body.data).toHaveLength(0);
+  });
+
+  it("quick opens by recent name/path without returning trashed or foreign documents", async () => {
+    const { agent } = await authenticatedWorkspace();
+    const folder = await createFolder(agent, null, "Architecture");
+    const document = await createDocument(agent, folder.id, "Decisions.md", "ADR notes");
+    const trashed = await createDocument(agent, folder.id, "Deleted-decisions.md", "old");
+    await agent.post(`/api/v1/documents/${trashed.id}/trash`).set("Origin", origin).expect(201);
+    const other = await createOtherWorkspace();
+    await database.document.create({
+      data: {
+        workspaceId: other.workspaceId,
+        ...naming.validate("Decisions-private.md", "document"),
+      },
+    });
+
+    const result = await agent.get("/api/v1/quick-open").query({ q: "decision" }).expect(200);
+    expect(result.body.data).toEqual([
+      expect.objectContaining({
+        documentId: document.id,
+        name: "Decisions.md",
+        path: "/Architecture/Decisions.md",
+      }),
+    ]);
+  });
+
+  it("rejects unauthenticated, foreign-scope and malformed search requests without wildcard broadening", async () => {
+    await supertest(app.getHttpServer()).get("/api/v1/search").query({ q: "private" }).expect(401);
+    await supertest(app.getHttpServer()).get("/api/v1/quick-open").expect(401);
+    const { agent } = await authenticatedWorkspace();
+    await createDocument(agent, null, "Literal-percent.md", "progress is 100% complete");
+    await createDocument(agent, null, "Ordinary.md", "ordinary content");
+    const literal = await agent.get("/api/v1/search").query({ q: "%", scope: "all" }).expect(200);
+    expect(literal.body.data).toEqual([expect.objectContaining({ name: "Literal-percent.md" })]);
+    await agent
+      .get("/api/v1/search")
+      .query({ q: "term", scope: "all", cursor: "invalid-cursor" })
+      .expect(400);
+
+    const foreign = await createOtherWorkspace();
+    const foreignFolder = await database.folder.create({
+      data: {
+        workspaceId: foreign.workspaceId,
+        ...naming.validate("Foreign Scope", "folder"),
+      },
+    });
+    await agent
+      .get("/api/v1/search")
+      .query({ q: "term", scope: "subtree", folderId: foreignFolder.id })
+      .expect(404);
+  });
+
+  it("keeps representative 10k-document search below the provisional local p95 budget", async () => {
+    const { agent, workspaceId } = await authenticatedWorkspace();
+    await database.$executeRaw`
+      INSERT INTO documents (workspace_id, name, normalized_name, markdown, updated_at)
+      SELECT ${workspaceId}::uuid,
+        'Search ' || lpad(value::text, 5, '0') || '.md',
+        'search ' || lpad(value::text, 5, '0') || '.md',
+        CASE WHEN value = 7777 THEN '代表性中文搜索目标：知识检索与相关性。'
+             ELSE 'ordinary search benchmark filler' END,
+        now()
+      FROM generate_series(1, 10000) value
+    `;
+    const latencies: number[] = [];
+    for (let iteration = 0; iteration < 15; iteration += 1) {
+      const startedAt = performance.now();
+      const response = await agent
+        .get("/api/v1/search")
+        .query({ q: "知识检索", scope: "all" })
+        .expect(200);
+      latencies.push(performance.now() - startedAt);
+      expect(response.body.data[0].name).toBe("Search 07777.md");
+    }
+    latencies.sort((left, right) => left - right);
+    expect(latencies[Math.ceil(latencies.length * 0.95) - 1]).toBeLessThan(500);
+  }, 20_000);
+});
+
 async function authenticatedWorkspace() {
   const created = await bootstrapAdmin(database, process.env);
   const agent = supertest.agent(app.getHttpServer());
