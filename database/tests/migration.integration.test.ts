@@ -32,6 +32,12 @@ describe("empty-to-current migration", () => {
       "20260812000310_phase_2_tenant_constraints",
     );
     expect(result.rows.map((row) => row.migration_name)).toContain("20260812000400_phase_3_editor");
+    expect(result.rows.map((row) => row.migration_name)).toContain(
+      "20260812000500_phase_4_recovery",
+    );
+    expect(result.rows.map((row) => row.migration_name)).toContain(
+      "20260812000510_phase_4_recovery_backfill",
+    );
   });
 
   it("supports a transaction without leaving test data", async () => {

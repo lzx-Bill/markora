@@ -25,6 +25,17 @@ import {
 } from "./content.js";
 import { ApiErrorSchema } from "./errors.js";
 import { HealthResponseSchema } from "./health.js";
+import {
+  BackgroundJobSchema,
+  DocumentVersionDetailSchema,
+  DocumentVersionListSchema,
+  PermanentDeleteResultSchema,
+  RestoreDocumentVersionRequestSchema,
+  RestoreDocumentVersionResultSchema,
+  RestoreResourceRequestSchema,
+  RestoreResourceResultSchema,
+  TrashListSchema,
+} from "./recovery.js";
 
 const healthSchema = z.toJSONSchema(HealthResponseSchema, { target: "draft-7" });
 const errorSchema = z.toJSONSchema(ApiErrorSchema, { target: "draft-7" });
@@ -52,6 +63,27 @@ const updateDocumentSchema = z.toJSONSchema(UpdateDocumentRequestSchema, { targe
 const bulkDocumentSchema = z.toJSONSchema(BulkDocumentRequestSchema, { target: "draft-7" });
 const bulkDocumentResultSchema = z.toJSONSchema(BulkDocumentResultSchema, { target: "draft-7" });
 const trashResultSchema = z.toJSONSchema(TrashResultSchema, { target: "draft-7" });
+const documentVersionListSchema = z.toJSONSchema(DocumentVersionListSchema, { target: "draft-7" });
+const documentVersionDetailSchema = z.toJSONSchema(DocumentVersionDetailSchema, {
+  target: "draft-7",
+});
+const restoreVersionRequestSchema = z.toJSONSchema(RestoreDocumentVersionRequestSchema, {
+  target: "draft-7",
+});
+const restoreVersionResultSchema = z.toJSONSchema(RestoreDocumentVersionResultSchema, {
+  target: "draft-7",
+});
+const restoreResourceRequestSchema = z.toJSONSchema(RestoreResourceRequestSchema, {
+  target: "draft-7",
+});
+const restoreResourceResultSchema = z.toJSONSchema(RestoreResourceResultSchema, {
+  target: "draft-7",
+});
+const trashListSchema = z.toJSONSchema(TrashListSchema, { target: "draft-7" });
+const permanentDeleteResultSchema = z.toJSONSchema(PermanentDeleteResultSchema, {
+  target: "draft-7",
+});
+const backgroundJobSchema = z.toJSONSchema(BackgroundJobSchema, { target: "draft-7" });
 
 const uuidPathParameter = {
   name: "id",
@@ -59,6 +91,10 @@ const uuidPathParameter = {
   required: true,
   schema: { type: "string", format: "uuid" },
 } as const;
+
+function uuidParameter(name: string) {
+  return { name, in: "path", required: true, schema: { type: "string", format: "uuid" } } as const;
+}
 
 function jsonBody(schema: object) {
   return { required: true, content: { "application/json": { schema } } };
@@ -118,6 +154,17 @@ export const openApiDocument = {
           "422": jsonResponse("Cycle, depth, or naming policy violation.", errorSchema),
         },
       },
+      delete: {
+        operationId: "permanentlyDeleteFolder",
+        parameters: [uuidPathParameter],
+        responses: {
+          "200": jsonResponse(
+            "Restart-safe permanent deletion accepted.",
+            permanentDeleteResultSchema,
+          ),
+          "404": jsonResponse("Trashed folder absent from this workspace.", errorSchema),
+        },
+      },
     },
     "/folders/{id}/trash": {
       post: {
@@ -125,6 +172,20 @@ export const openApiDocument = {
         parameters: [uuidPathParameter],
         responses: {
           "201": jsonResponse("Folder subtree hidden from active navigation.", trashResultSchema),
+        },
+      },
+    },
+    "/folders/{id}/restore": {
+      post: {
+        operationId: "restoreFolder",
+        parameters: [uuidPathParameter],
+        requestBody: jsonBody(restoreResourceRequestSchema),
+        responses: {
+          "201": jsonResponse(
+            "Folder subtree restored without overwrite.",
+            restoreResourceResultSchema,
+          ),
+          "409": jsonResponse("Restore target or Keep Both resolution required.", errorSchema),
         },
       },
     },
@@ -179,6 +240,17 @@ export const openApiDocument = {
           "409": jsonResponse("Name or metadata conflict.", errorSchema),
         },
       },
+      delete: {
+        operationId: "permanentlyDeleteDocument",
+        parameters: [uuidPathParameter],
+        responses: {
+          "200": jsonResponse(
+            "Restart-safe permanent deletion accepted.",
+            permanentDeleteResultSchema,
+          ),
+          "404": jsonResponse("Trashed document absent from this workspace.", errorSchema),
+        },
+      },
     },
     "/documents/{id}/trash": {
       post: {
@@ -186,6 +258,60 @@ export const openApiDocument = {
         parameters: [uuidPathParameter],
         responses: {
           "201": jsonResponse("Document hidden from active navigation.", trashResultSchema),
+        },
+      },
+    },
+    "/documents/{id}/restore": {
+      post: {
+        operationId: "restoreDocument",
+        parameters: [uuidPathParameter],
+        requestBody: jsonBody(restoreResourceRequestSchema),
+        responses: {
+          "201": jsonResponse("Document restored without overwrite.", restoreResourceResultSchema),
+          "409": jsonResponse("Restore target or Keep Both resolution required.", errorSchema),
+        },
+      },
+    },
+    "/documents/{documentId}/versions": {
+      get: {
+        operationId: "listDocumentVersions",
+        parameters: [
+          uuidParameter("documentId"),
+          { name: "cursor", in: "query", required: false, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": jsonResponse("Immutable document version metadata.", documentVersionListSchema),
+          "404": jsonResponse("Document absent from this workspace.", errorSchema),
+        },
+      },
+    },
+    "/documents/{documentId}/versions/{versionId}": {
+      get: {
+        operationId: "getDocumentVersion",
+        parameters: [uuidParameter("documentId"), uuidParameter("versionId")],
+        responses: {
+          "200": jsonResponse(
+            "Immutable version content for preview and diff.",
+            documentVersionDetailSchema,
+          ),
+          "404": jsonResponse("Document version absent from this workspace.", errorSchema),
+        },
+      },
+    },
+    "/documents/{documentId}/versions/{versionId}/restore": {
+      post: {
+        operationId: "restoreDocumentVersion",
+        parameters: [uuidParameter("documentId"), uuidParameter("versionId")],
+        requestBody: jsonBody(restoreVersionRequestSchema),
+        responses: {
+          "201": jsonResponse(
+            "Version restored after snapshotting current state.",
+            restoreVersionResultSchema,
+          ),
+          "409": jsonResponse(
+            "Current revision changed or historical name conflicts.",
+            errorSchema,
+          ),
         },
       },
     },
@@ -202,6 +328,33 @@ export const openApiDocument = {
           "404": jsonResponse("Document absent from this workspace.", errorSchema),
           "409": jsonResponse("Base revision is stale; server content is unchanged.", errorSchema),
           "413": jsonResponse("Markdown exceeds the configured size limit.", errorSchema),
+        },
+      },
+    },
+    "/trash": {
+      get: {
+        operationId: "listTrash",
+        parameters: [
+          {
+            name: "type",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["FOLDER", "DOCUMENT"] },
+          },
+          { name: "cursor", in: "query", required: false, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": jsonResponse("Logical Trash roots with recovery metadata.", trashListSchema),
+        },
+      },
+    },
+    "/jobs/{id}": {
+      get: {
+        operationId: "getJob",
+        parameters: [uuidPathParameter],
+        responses: {
+          "200": jsonResponse("Owned durable job state.", backgroundJobSchema),
+          "404": jsonResponse("Job absent from this workspace or owner.", errorSchema),
         },
       },
     },

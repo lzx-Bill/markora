@@ -1,0 +1,11 @@
+{
+  "id": "TRASH-002",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts: missing original parent requires target; collision fails closed; Keep Both restores without overwrite"
+  ],
+  "browser": "Chromium restored a colliding root item as Collision (2).md while preserving the active Collision.md.",
+  "artifacts": ["output/playwright/phase4-trash-keep-both-restored.png"],
+  "verifiedAt": "2026-08-12T23:40:00+08:00"
+}

@@ -11,6 +11,7 @@ import {
   revokeOtherSessions,
   revokeSession,
 } from "./auth-api.js";
+import { TrashPage } from "./TrashPage.js";
 import { GlobalRail, WorkspacePage } from "./WorkspacePage.js";
 
 export function App() {
@@ -72,6 +73,10 @@ function AuthGate() {
   };
   return (
     <Routes>
+      <Route
+        path="/trash"
+        element={<TrashPage principal={principalQuery.data} onLogout={onLogout} />}
+      />
       <Route
         path="/"
         element={<WorkspacePage principal={principalQuery.data} onLogout={onLogout} />}

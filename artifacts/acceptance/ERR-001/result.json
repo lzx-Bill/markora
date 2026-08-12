@@ -1,0 +1,11 @@
+{
+  "id": "ERR-001",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "API integration assertions cover coded NOT_FOUND, NAME_CONFLICT, RESTORE_TARGET_REQUIRED and REVISION_CONFLICT responses without raw stacks"
+  ],
+  "browser": "Version and Trash failures stay inside their panel, state that data is unchanged/safe, and offer target, Keep Both, retry or close actions. Deleted document navigation redirects to the workspace.",
+  "artifacts": ["output/playwright/phase4-unsynced-restore-blocked.png"],
+  "verifiedAt": "2026-08-12T23:40:00+08:00"
+}

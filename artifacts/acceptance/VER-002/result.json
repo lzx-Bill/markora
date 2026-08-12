@@ -1,0 +1,11 @@
+{
+  "id": "VER-002",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts: restore requires base revision, preserves selected version and snapshots current state as RESTORE"
+  ],
+  "browser": "Chromium restored a selected version from the History panel; current revision advanced and the editor showed the restored content.",
+  "artifacts": ["output/playwright/phase4-version-restored.png"],
+  "verifiedAt": "2026-08-12T23:40:00+08:00"
+}

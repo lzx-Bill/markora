@@ -1,0 +1,10 @@
+{
+  "id": "VER-001",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts: protected Replace snapshots the prior document and commits replacement atomically"
+  ],
+  "database": "Real PostgreSQL verified IMPORT_REPLACE version reason, source revision, old Markdown and new current revision in one transaction.",
+  "verifiedAt": "2026-08-12T23:40:00+08:00"
+}

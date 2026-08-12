@@ -228,11 +228,14 @@ export class ContentService {
       const folders = await visibleFolders(transaction, principal.workspaceId);
       const folder = folders.find((candidate) => candidate.id === folderId);
       if (!folder) this.throwNotFound("Folder");
+      const originalPath = this.folderPath(folder, folders);
       await transaction.folder.update({
         where: { id: folder.id },
         data: {
           state: ResourceState.TRASHED,
           originalParentId: folder.parentId,
+          originalParentIsRoot: folder.parentId === null,
+          originalPath,
           deletedAt: trashedAt,
         },
       });
@@ -537,11 +540,19 @@ export class ContentService {
       const folders = await visibleFolders(transaction, principal.workspaceId);
       if (document.folderId && !folders.some((folder) => folder.id === document.folderId))
         this.throwNotFound("Document");
+      const parent = document.folderId
+        ? folders.find((folder) => folder.id === document.folderId)
+        : undefined;
+      const originalPath = parent
+        ? `${this.folderPath(parent, folders)}/${document.name}`
+        : `/${document.name}`;
       await transaction.document.update({
         where: { id: documentId },
         data: {
           state: ResourceState.TRASHED,
           originalFolderId: document.folderId,
+          originalFolderIsRoot: document.folderId === null,
+          originalPath,
           deletedAt: trashedAt,
         },
       });
@@ -636,6 +647,20 @@ export class ContentService {
       }
       throw error;
     }
+  }
+
+  private folderPath(
+    folder: { id: string; parentId: string | null; name: string },
+    folders: readonly { id: string; parentId: string | null; name: string }[],
+  ): string {
+    const byId = new Map(folders.map((candidate) => [candidate.id, candidate]));
+    const segments = [folder.name];
+    let cursor = folder.parentId ? byId.get(folder.parentId) : undefined;
+    while (cursor) {
+      segments.unshift(cursor.name);
+      cursor = cursor.parentId ? byId.get(cursor.parentId) : undefined;
+    }
+    return `/${segments.join("/")}`;
   }
 
   private assertTargetFolder(folders: readonly { id: string }[], folderId: string | null): void {

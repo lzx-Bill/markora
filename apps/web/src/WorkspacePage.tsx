@@ -89,6 +89,13 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
   });
 
   useEffect(() => {
+    if (documentId && documentQuery.error) {
+      const error = documentQuery.error as { code?: string };
+      if (error.code === "NOT_FOUND") navigate("/", { replace: true });
+    }
+  }, [documentId, documentQuery.error, navigate]);
+
+  useEffect(() => {
     if (documentQuery.data) {
       setSelectedFolderId(documentQuery.data.folderId);
       setSelectedIds(new Set());
@@ -552,7 +559,7 @@ export function GlobalRail({
 }: {
   readonly principal: Principal;
   readonly onLogout: () => void | Promise<void>;
-  readonly current: "documents" | "settings";
+  readonly current: "documents" | "trash" | "settings";
   readonly onNewDocument?: () => void;
 }) {
   return (
@@ -582,9 +589,13 @@ export function GlobalRail({
           </a>
         </li>
         <li>
-          <a href="#trash" aria-label="Trash">
+          <Link
+            className={current === "trash" ? "active" : undefined}
+            to="/trash"
+            aria-label="Trash"
+          >
             ♲ <span>Trash</span>
-          </a>
+          </Link>
         </li>
         <li>
           <Link

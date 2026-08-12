@@ -23,6 +23,11 @@ export const ServerConfigSchema = z.object({
   DOCUMENT_LARGE_BYTES: z.coerce.number().int().min(1024).default(1_048_576),
   DOCUMENT_LARGE_LINES: z.coerce.number().int().min(1000).default(50_000),
   VERSION_SNAPSHOT_INTERVAL_MINUTES: z.coerce.number().int().min(1).max(1440).default(10),
+  VERSION_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(90),
+  TRASH_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(30),
+  DELETE_BATCH_SIZE: z.coerce.number().int().min(1).max(1000).default(100),
+  JOB_LEASE_SECONDS: z.coerce.number().int().min(5).max(3600).default(30),
+  WORKER_POLL_MS: z.coerce.number().int().min(100).max(60000).default(1000),
 });
 
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;

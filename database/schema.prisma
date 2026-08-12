@@ -31,6 +31,23 @@ enum ResourceState {
 enum DocumentVersionReason {
   AUTO_SAVE
   CONFLICT_OVERWRITE
+  RESTORE
+  IMPORT_REPLACE
+}
+
+enum BackgroundJobType {
+  PERMANENT_DELETE_FOLDER
+  PERMANENT_DELETE_DOCUMENT
+}
+
+enum BackgroundJobState {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  SUCCEEDED_WITH_ISSUES
+  FAILED
+  CANCELLED
+  INTERRUPTED
 }
 
 model User {
@@ -50,6 +67,7 @@ model User {
   sessions           Session[]
   auditEvents        AuditEvent[]      @relation("AuditActor")
   documentVersions   DocumentVersion[]
+  backgroundJobs    BackgroundJob[]
 
   @@map("users")
 }
@@ -63,6 +81,7 @@ model Workspace {
   folders          Folder[]
   documents        Document[]
   documentVersions DocumentVersion[]
+  backgroundJobs   BackgroundJob[]
 
   @@map("workspaces")
 }
@@ -75,6 +94,8 @@ model Folder {
   normalizedName    String        @map("normalized_name")
   state             ResourceState @default(ACTIVE)
   originalParentId  String?       @map("original_parent_id") @db.Uuid
+  originalParentIsRoot Boolean    @default(false) @map("original_parent_is_root")
+  originalPath      String?       @map("original_path")
   deletedAt         DateTime?     @map("deleted_at") @db.Timestamptz(3)
   createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -102,6 +123,8 @@ model Document {
   revision         Int                   @default(1)
   state            ResourceState         @default(ACTIVE)
   originalFolderId String?               @map("original_folder_id") @db.Uuid
+  originalFolderIsRoot Boolean           @default(false) @map("original_folder_is_root")
+  originalPath     String?               @map("original_path")
   deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(3)
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -152,6 +175,35 @@ model DocumentSaveReceipt {
   @@unique([documentId, clientMutationId])
   @@index([workspaceId, savedAt(sort: Desc)])
   @@map("document_save_receipts")
+}
+
+model BackgroundJob {
+  id             String             @id @default(uuid()) @db.Uuid
+  workspaceId    String             @map("workspace_id") @db.Uuid
+  ownerUserId    String             @map("owner_user_id") @db.Uuid
+  type           BackgroundJobType
+  state          BackgroundJobState @default(PENDING)
+  targetType     String             @map("target_type")
+  targetId       String             @map("target_id") @db.Uuid
+  progress       Int                @default(0)
+  checkpoint     Json               @default("{}") @map("checkpoint_json") @db.JsonB
+  result         Json?              @map("result_json") @db.JsonB
+  errorCode      String?            @map("error_code")
+  attempts       Int                @default(0)
+  runAfter       DateTime           @default(now()) @map("run_after") @db.Timestamptz(3)
+  leaseOwner     String?            @map("lease_owner")
+  leaseExpiresAt DateTime?          @map("lease_expires_at") @db.Timestamptz(3)
+  startedAt      DateTime?          @map("started_at") @db.Timestamptz(3)
+  completedAt    DateTime?          @map("completed_at") @db.Timestamptz(3)
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  workspace      Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner          User               @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
+
+  @@index([state, runAfter, leaseExpiresAt])
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@index([workspaceId, targetType, targetId])
+  @@map("background_jobs")
 }
 
 model Session {

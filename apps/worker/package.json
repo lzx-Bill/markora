@@ -8,10 +8,12 @@
     "start": "node dist/main.js",
     "build": "tsup src/main.ts --format esm --platform node --sourcemap --clean",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run src --passWithNoTests",
+    "test:integration": "vitest run integration --maxWorkers=1 --no-file-parallelism"
   },
   "dependencies": {
     "@markora/config": "workspace:*",
+    "@markora/database": "workspace:*",
     "@nestjs/common": "11.1.29",
     "@nestjs/core": "11.1.29",
     "reflect-metadata": "0.2.2",

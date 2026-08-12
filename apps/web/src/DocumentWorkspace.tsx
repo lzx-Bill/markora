@@ -1,5 +1,6 @@
 import type { DocumentDetail } from "@markora/contracts";
 import { DEFAULT_AUTOSAVE_DEBOUNCE_MS, extractMarkdownOutline } from "@markora/markdown";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createEmergencyDraft,
@@ -10,7 +11,14 @@ import {
   writeEmergencyDraft,
 } from "./draft-storage.js";
 import { type EditorMode, MarkdownPreview, SourceEditor, WysiwygEditor } from "./MarkdownEditor.js";
-import { saveDocumentContent, WorkspaceApiError } from "./workspace-api.js";
+import { buildVersionDiffRows } from "./version-diff.js";
+import {
+  getDocumentVersion,
+  getDocumentVersions,
+  restoreDocumentVersion,
+  saveDocumentContent,
+  WorkspaceApiError,
+} from "./workspace-api.js";
 
 type SaveStatus = "saved" | "local" | "saving" | "offline" | "failed" | "conflict";
 
@@ -47,6 +55,9 @@ export function DocumentWorkspace({
   );
   const [savingSnapshot, setSavingSnapshot] = useState<string | null>(null);
   const [editorGeneration, setEditorGeneration] = useState(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const markdownRef = useRef(markdown);
   const revisionRef = useRef(baseRevision);
   const acknowledgedRef = useRef(acknowledgedMarkdown);
@@ -57,6 +68,42 @@ export function DocumentWorkspace({
   const dirty = markdown !== acknowledgedMarkdown;
   const splitAvailable = document.capabilities.split && desktopSplit;
   const outline = useMemo(() => extractMarkdownOutline(markdown), [markdown]);
+  const versionsQuery = useQuery({
+    queryKey: ["document", document.id, "versions"],
+    queryFn: () => getDocumentVersions(document.id),
+    enabled: historyOpen,
+  });
+  const versionQuery = useQuery({
+    queryKey: ["document", document.id, "versions", selectedVersionId],
+    queryFn: () => getDocumentVersion(document.id, selectedVersionId ?? ""),
+    enabled: historyOpen && selectedVersionId !== null,
+  });
+  const restoreVersionMutation = useMutation({
+    mutationFn: () => restoreDocumentVersion(document.id, selectedVersionId ?? "", baseRevision),
+    onSuccess: async (result) => {
+      if (!versionQuery.data) return;
+      const restoredMarkdown = versionQuery.data.markdown;
+      setMarkdown(restoredMarkdown);
+      setAcknowledgedMarkdown(restoredMarkdown);
+      setBaseRevision(result.revision);
+      setStatus("saved");
+      setHistoryOpen(false);
+      setSelectedVersionId(null);
+      setEditorGeneration((value) => value + 1);
+      await discardEmergencyDraft(document.id);
+      queryClient.setQueryData<DocumentDetail>(["document", document.id], (current) =>
+        current
+          ? {
+              ...current,
+              name: versionQuery.data?.documentName ?? current.name,
+              markdown: restoredMarkdown,
+              revision: result.revision,
+            }
+          : current,
+      );
+      await queryClient.invalidateQueries({ queryKey: ["document", document.id, "versions"] });
+    },
+  });
 
   useEffect(() => {
     let disposed = false;
@@ -218,6 +265,9 @@ export function DocumentWorkspace({
           <SaveIndicator status={status} revision={baseRevision} />
         </div>
         <div className="document-actions">
+          <button type="button" onClick={() => setHistoryOpen(true)}>
+            History
+          </button>
           <button type="button" onClick={() => onMetadataAction("rename")}>
             Rename
           </button>
@@ -386,7 +436,173 @@ export function DocumentWorkspace({
           }
         />
       ) : null}
+      {historyOpen ? (
+        <VersionHistoryPanel
+          currentMarkdown={markdown}
+          dirty={dirty}
+          versions={versionsQuery.data?.data ?? []}
+          selected={versionQuery.data ?? null}
+          selectedVersionId={selectedVersionId}
+          loading={versionsQuery.isPending || versionQuery.isFetching}
+          error={versionsQuery.error ?? versionQuery.error ?? restoreVersionMutation.error}
+          restoring={restoreVersionMutation.isPending}
+          onSelect={setSelectedVersionId}
+          onRestore={() => restoreVersionMutation.mutate()}
+          onClose={() => {
+            setHistoryOpen(false);
+            setSelectedVersionId(null);
+          }}
+        />
+      ) : null}
     </>
+  );
+}
+
+function VersionHistoryPanel({
+  currentMarkdown,
+  dirty,
+  versions,
+  selected,
+  selectedVersionId,
+  loading,
+  error,
+  restoring,
+  onSelect,
+  onRestore,
+  onClose,
+}: {
+  readonly currentMarkdown: string;
+  readonly dirty: boolean;
+  readonly versions: readonly {
+    id: string;
+    versionNo: number;
+    reason: string;
+    sourceRevision: number;
+    actor: { displayName: string };
+    createdAt: string;
+  }[];
+  readonly selected: { id: string; markdown: string; documentName: string } | null;
+  readonly selectedVersionId: string | null;
+  readonly loading: boolean;
+  readonly error: Error | null;
+  readonly restoring: boolean;
+  readonly onSelect: (id: string) => void;
+  readonly onRestore: () => void;
+  readonly onClose: () => void;
+}) {
+  return (
+    <div className="dialog-backdrop">
+      <section
+        className="version-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="version-title"
+      >
+        <header>
+          <div>
+            <p className="eyebrow">IMMUTABLE HISTORY</p>
+            <h2 id="version-title">Version history</h2>
+          </div>
+          <button
+            className="icon-button"
+            type="button"
+            aria-label="Close version history"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </header>
+        {error ? (
+          <div className="operation-notice" role="alert">
+            {error.message} The current document and local draft were not changed. Retry or close.
+          </div>
+        ) : null}
+        {dirty ? (
+          <div className="editor-safety-notice" role="status">
+            Restore is blocked while this document has unsynced edits. Save or recover the local
+            draft first.
+          </div>
+        ) : null}
+        <div className="version-layout">
+          <aside aria-label="Versions">
+            {loading && versions.length === 0 ? <p role="status">Loading versions…</p> : null}
+            {versions.length === 0 && !loading ? <p>No safety snapshots yet.</p> : null}
+            <ul className="version-list">
+              {versions.map((version) => (
+                <li key={version.id}>
+                  <button
+                    type="button"
+                    className={selectedVersionId === version.id ? "selected" : undefined}
+                    onClick={() => onSelect(version.id)}
+                  >
+                    <strong>Revision {version.sourceRevision}</strong>
+                    <small>
+                      {formatVersionReason(version.reason)} · {formatVersionDate(version.createdAt)}
+                    </small>
+                    <small>{version.actor.displayName}</small>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </aside>
+          <div className="version-preview">
+            {selected ? (
+              <>
+                <div className="version-preview-heading">
+                  <div>
+                    <strong>{selected.documentName}</strong>
+                    <small>Preview only; current content is unchanged.</small>
+                  </div>
+                  <button
+                    className="primary-action"
+                    type="button"
+                    disabled={dirty || restoring}
+                    onClick={onRestore}
+                  >
+                    {restoring ? "Restoring…" : "Restore this version"}
+                  </button>
+                </div>
+                <LineDiff before={selected.markdown} after={currentMarkdown} />
+              </>
+            ) : (
+              <p>Select a version to preview its difference from the current document.</p>
+            )}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function LineDiff({ before, after }: { readonly before: string; readonly after: string }) {
+  const rows = buildVersionDiffRows(before, after);
+  return (
+    <section className="line-diff" aria-label="Line comparison">
+      <div>
+        <strong>Selected version</strong>
+      </div>
+      <div>
+        <strong>Current document</strong>
+      </div>
+      {rows.map((row) => {
+        return (
+          <div className="line-diff-row" key={row.key}>
+            <pre className={row.changed ? "removed" : undefined}>{row.oldLine || " "}</pre>
+            <pre className={row.changed ? "added" : undefined}>{row.currentLine || " "}</pre>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+function formatVersionReason(reason: string): string {
+  return reason.toLowerCase().replaceAll("_", " ");
+}
+
+function formatVersionDate(value: string): string {
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
+    new Date(value),
   );
 }
 

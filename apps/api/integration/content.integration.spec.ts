@@ -14,6 +14,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { PasswordService } from "../src/auth/password.service.js";
 import { hashSessionToken } from "../src/auth/session-token.js";
 import { bootstrapAdmin } from "../src/bootstrap-admin.js";
+import { VersionService } from "../src/content/version.service.js";
 import { createApplication } from "../src/create-app.js";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -382,6 +383,190 @@ describe("Phase 3 revision-guarded document editing", () => {
       .expect(200);
     expect(noChange.body).toMatchObject({ revision: 1, versionCreated: false });
     expect(await database.documentVersion.count({ where: { documentId: document.id } })).toBe(0);
+  });
+});
+
+describe("Phase 4 versions and recovery", () => {
+  it("previews immutable versions and restores through a new safety snapshot", async () => {
+    const { agent } = await authenticatedWorkspace();
+    const document = await createDocument(agent, null, "History.md", "version one");
+    await agent
+      .put(`/api/v1/documents/${document.id}/content`)
+      .set("Origin", origin)
+      .send({ markdown: "version two", baseRevision: 1, clientMutationId: randomUUID() })
+      .expect(200);
+
+    const beforePreview = await database.document.findUniqueOrThrow({ where: { id: document.id } });
+    const versions = await agent.get(`/api/v1/documents/${document.id}/versions`).expect(200);
+    expect(versions.body).toMatchObject({ retentionDays: 90 });
+    expect(versions.body.data).toHaveLength(1);
+    const versionId = versions.body.data[0].id as string;
+    const preview = await agent
+      .get(`/api/v1/documents/${document.id}/versions/${versionId}`)
+      .expect(200);
+    expect(preview.body).toMatchObject({ markdown: "version one", sourceRevision: 1 });
+    const afterPreview = await database.document.findUniqueOrThrow({ where: { id: document.id } });
+    expect(afterPreview).toEqual(beforePreview);
+
+    const restored = await agent
+      .post(`/api/v1/documents/${document.id}/versions/${versionId}/restore`)
+      .set("Origin", origin)
+      .send({ baseRevision: 2 })
+      .expect(201);
+    expect(restored.body).toMatchObject({ revision: 3, restoredVersionId: versionId });
+    expect(await database.document.findUniqueOrThrow({ where: { id: document.id } })).toMatchObject(
+      {
+        markdown: "version one",
+        revision: 3,
+      },
+    );
+    const history = await database.documentVersion.findMany({
+      where: { documentId: document.id },
+      orderBy: { versionNo: "asc" },
+    });
+    expect(history).toHaveLength(2);
+    expect(history[1]).toMatchObject({
+      markdown: "version two",
+      reason: "RESTORE",
+      sourceRevision: 2,
+    });
+  });
+
+  it("protects atomic Replace and leaves the prior state recoverable", async () => {
+    const { agent, workspaceId } = await authenticatedWorkspace();
+    const principal = (await agent.get("/api/v1/auth/me").expect(200)).body;
+    const document = await database.document.create({
+      data: {
+        workspaceId,
+        markdown: "before import",
+        ...naming.validate("Imported.md", "document"),
+      },
+    });
+    const result = await app
+      .get(VersionService)
+      .replaceProtected(principal, document.id, "after import", 1, randomUUID());
+    expect(result.revision).toBe(2);
+    expect(await database.document.findUniqueOrThrow({ where: { id: document.id } })).toMatchObject(
+      {
+        markdown: "after import",
+        revision: 2,
+      },
+    );
+    expect(
+      await database.documentVersion.findFirstOrThrow({ where: { documentId: document.id } }),
+    ).toMatchObject({
+      markdown: "before import",
+      reason: "IMPORT_REPLACE",
+      sourceRevision: 1,
+    });
+  });
+
+  it("lists one logical trash root and restores with target and Keep Both resolution", async () => {
+    const { agent } = await authenticatedWorkspace();
+    const parent = await createFolder(agent, null, "Archive");
+    const child = await createFolder(agent, parent.id, "Nested");
+    await createDocument(agent, child.id, "Inside.md", "inside");
+    await agent.post(`/api/v1/folders/${parent.id}/trash`).set("Origin", origin).expect(201);
+
+    const trash = await agent.get("/api/v1/trash").expect(200);
+    expect(trash.body).toMatchObject({ retentionDays: 30, nextCursor: null });
+    expect(trash.body.data).toEqual([
+      expect.objectContaining({
+        id: parent.id,
+        type: "FOLDER",
+        originalPath: "/Archive",
+        state: "TRASHED",
+      }),
+    ]);
+
+    await createFolder(agent, null, "Archive");
+    const conflict = await agent
+      .post(`/api/v1/folders/${parent.id}/restore`)
+      .set("Origin", origin)
+      .send({ conflictStrategy: "FAIL" })
+      .expect(409);
+    expect(conflict.body.error.code).toBe("NAME_CONFLICT");
+    const restored = await agent
+      .post(`/api/v1/folders/${parent.id}/restore`)
+      .set("Origin", origin)
+      .send({ conflictStrategy: "KEEP_BOTH" })
+      .expect(201);
+    expect(restored.body).toMatchObject({ success: true, name: "Archive (2)", parentId: null });
+    await agent.get(`/api/v1/documents?folderId=${child.id}`).expect(200);
+  });
+
+  it("requires a new target when an original parent is unavailable and isolates recovery IDs", async () => {
+    const { agent } = await authenticatedWorkspace();
+    const parent = await createFolder(agent, null, "Original");
+    const target = await createFolder(agent, null, "Recovery");
+    const document = await createDocument(agent, parent.id, "Recover.md", "safe");
+    await agent.post(`/api/v1/documents/${document.id}/trash`).set("Origin", origin).expect(201);
+    await agent.post(`/api/v1/folders/${parent.id}/trash`).set("Origin", origin).expect(201);
+    const missing = await agent
+      .post(`/api/v1/documents/${document.id}/restore`)
+      .set("Origin", origin)
+      .send({})
+      .expect(409);
+    expect(missing.body.error.code).toBe("RESTORE_TARGET_REQUIRED");
+    await agent
+      .post(`/api/v1/documents/${document.id}/restore`)
+      .set("Origin", origin)
+      .send({ targetParentId: target.id })
+      .expect(201);
+
+    const other = await createOtherWorkspace();
+    const foreign = await database.document.create({
+      data: {
+        workspaceId: other.workspaceId,
+        state: ResourceState.TRASHED,
+        deletedAt: new Date(),
+        ...naming.validate("Foreign-trash.md", "document"),
+      },
+    });
+    await agent.get(`/api/v1/documents/${foreign.id}/versions`).expect(404);
+    await agent
+      .post(`/api/v1/documents/${foreign.id}/restore`)
+      .set("Origin", origin)
+      .send({ targetParentId: null })
+      .expect(404);
+    await agent.delete(`/api/v1/documents/${foreign.id}`).set("Origin", origin).expect(404);
+  });
+
+  it("enqueues permanent deletion idempotently and exposes only owned job state", async () => {
+    const { agent } = await authenticatedWorkspace();
+    const document = await createDocument(agent, null, "Delete.md", "gone soon");
+    await agent.post(`/api/v1/documents/${document.id}/trash`).set("Origin", origin).expect(201);
+    const first = await agent
+      .delete(`/api/v1/documents/${document.id}`)
+      .set("Origin", origin)
+      .expect(200);
+    const second = await agent
+      .delete(`/api/v1/documents/${document.id}`)
+      .set("Origin", origin)
+      .expect(200);
+    expect(second.body.job.id).toBe(first.body.job.id);
+    expect(first.body).toMatchObject({ accepted: true, job: { state: "PENDING", progress: 0 } });
+    expect((await database.document.findUniqueOrThrow({ where: { id: document.id } })).state).toBe(
+      ResourceState.DELETING,
+    );
+    await agent.get(`/api/v1/jobs/${first.body.job.id}`).expect(200);
+    expect(await database.backgroundJob.count({ where: { targetId: document.id } })).toBe(1);
+
+    await database.backgroundJob.update({
+      where: { id: first.body.job.id },
+      data: { state: "SUCCEEDED", progress: 100, completedAt: new Date() },
+    });
+    await database.documentVersion.deleteMany({ where: { documentId: document.id } });
+    await database.documentSaveReceipt.deleteMany({ where: { documentId: document.id } });
+    await database.document.delete({ where: { id: document.id } });
+    const completedReplay = await agent
+      .delete(`/api/v1/documents/${document.id}`)
+      .set("Origin", origin)
+      .expect(200);
+    expect(completedReplay.body).toMatchObject({
+      accepted: true,
+      job: { id: first.body.job.id, state: "SUCCEEDED", progress: 100 },
+    });
   });
 });
 

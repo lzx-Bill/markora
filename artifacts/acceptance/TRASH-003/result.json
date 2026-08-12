@@ -1,0 +1,12 @@
+{
+  "id": "TRASH-003",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts: deletion intent is idempotent and transitions root to DELETING",
+    "apps/worker/integration/permanent-deletion.integration.spec.ts: expired lease is reclaimed and document/folder dependencies are deleted in bounded batches"
+  ],
+  "browser": "Chromium showed queued deletion with disabled recovery controls, then an empty Trash after the durable worker completed; direct active navigation returned no document.",
+  "artifacts": ["output/playwright/phase4-permanent-delete-complete.png"],
+  "verifiedAt": "2026-08-12T23:40:00+08:00"
+}

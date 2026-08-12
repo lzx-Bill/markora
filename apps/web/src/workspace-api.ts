@@ -1,17 +1,31 @@
 import {
   ApiErrorSchema,
+  type BackgroundJob,
+  BackgroundJobSchema,
   type BulkDocumentResult,
   BulkDocumentResultSchema,
   type DocumentDetail,
   DocumentDetailSchema,
   type DocumentList,
   DocumentListSchema,
+  type DocumentVersionDetail,
+  DocumentVersionDetailSchema,
+  type DocumentVersionList,
+  DocumentVersionListSchema,
   type Folder,
   FolderSchema,
   type FolderTree,
   FolderTreeSchema,
+  type PermanentDeleteResult,
+  PermanentDeleteResultSchema,
+  type RestoreDocumentVersionResult,
+  RestoreDocumentVersionResultSchema,
+  type RestoreResourceResult,
+  RestoreResourceResultSchema,
   type SaveDocumentContentResult,
   SaveDocumentContentResultSchema,
+  type TrashList,
+  TrashListSchema,
 } from "@markora/contracts";
 
 export class WorkspaceApiError extends Error {
@@ -130,4 +144,64 @@ export async function bulkDocuments(input: {
   return BulkDocumentResultSchema.parse(
     await request("/documents/bulk", { method: "POST", body: JSON.stringify(input) }),
   );
+}
+
+export async function getDocumentVersions(id: string): Promise<DocumentVersionList> {
+  return DocumentVersionListSchema.parse(await request(`/documents/${id}/versions`));
+}
+
+export async function getDocumentVersion(
+  documentId: string,
+  versionId: string,
+): Promise<DocumentVersionDetail> {
+  return DocumentVersionDetailSchema.parse(
+    await request(`/documents/${documentId}/versions/${versionId}`),
+  );
+}
+
+export async function restoreDocumentVersion(
+  documentId: string,
+  versionId: string,
+  baseRevision: number,
+): Promise<RestoreDocumentVersionResult> {
+  return RestoreDocumentVersionResultSchema.parse(
+    await request(`/documents/${documentId}/versions/${versionId}/restore`, {
+      method: "POST",
+      body: JSON.stringify({ baseRevision }),
+    }),
+  );
+}
+
+export async function getTrash(): Promise<TrashList> {
+  return TrashListSchema.parse(await request("/trash"));
+}
+
+export async function restoreTrashItem(
+  type: "FOLDER" | "DOCUMENT",
+  id: string,
+  targetParentId: string | null | undefined,
+  conflictStrategy: "FAIL" | "KEEP_BOTH",
+): Promise<RestoreResourceResult> {
+  const target = type === "FOLDER" ? "folders" : "documents";
+  return RestoreResourceResultSchema.parse(
+    await request(`/${target}/${id}/restore`, {
+      method: "POST",
+      body: JSON.stringify({
+        ...(targetParentId !== undefined ? { targetParentId } : {}),
+        conflictStrategy,
+      }),
+    }),
+  );
+}
+
+export async function permanentlyDeleteTrashItem(
+  type: "FOLDER" | "DOCUMENT",
+  id: string,
+): Promise<PermanentDeleteResult> {
+  const target = type === "FOLDER" ? "folders" : "documents";
+  return PermanentDeleteResultSchema.parse(await request(`/${target}/${id}`, { method: "DELETE" }));
+}
+
+export async function getJob(id: string): Promise<BackgroundJob> {
+  return BackgroundJobSchema.parse(await request(`/jobs/${id}`));
 }

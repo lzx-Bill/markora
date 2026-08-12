@@ -16,7 +16,7 @@
     "format": "biome format --write .",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
-    "test:integration": "pnpm --filter @markora/database test:integration && pnpm --filter @markora/api test:integration",
+    "test:integration": "pnpm --filter @markora/database test:integration && pnpm --filter @markora/api test:integration && pnpm --filter @markora/worker test:integration",
     "openapi:generate": "pnpm --filter @markora/contracts openapi:generate",
     "openapi:check": "pnpm --filter @markora/contracts openapi:check",
     "db:validate": "prisma validate --config database/prisma.config.ts",

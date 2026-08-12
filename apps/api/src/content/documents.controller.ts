@@ -5,20 +5,39 @@ import {
   type DocumentDetail,
   type DocumentList,
   OpaqueIdSchema,
+  type PermanentDeleteResult,
+  RestoreResourceRequestSchema,
+  type RestoreResourceResult,
   SaveDocumentContentRequestSchema,
   type SaveDocumentContentResult,
   type TrashResult,
   UpdateDocumentRequestSchema,
 } from "@markora/contracts";
-import { Body, Controller, Get, Inject, Param, Patch, Post, Put, Query, Req } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Req,
+} from "@nestjs/common";
 import type { RequestContext } from "../http/request-context.js";
 import { parseRequest } from "../http/validation.js";
 import { ContentService } from "./content.service.js";
+import { TrashService } from "./trash.service.js";
 
 @Controller("documents")
 export class DocumentsController {
   @Inject(ContentService)
   private readonly content!: ContentService;
+
+  @Inject(TrashService)
+  private readonly recovery!: TrashService;
 
   @Get()
   public list(
@@ -85,6 +104,32 @@ export class DocumentsController {
   @Post(":id/trash")
   public trash(@Param("id") id: string, @Req() request: RequestContext): Promise<TrashResult> {
     return this.content.trashDocument(
+      request.principal,
+      parseRequest(OpaqueIdSchema, id),
+      request.requestId,
+    );
+  }
+
+  @Post(":id/restore")
+  public restore(
+    @Param("id") id: string,
+    @Body() body: unknown,
+    @Req() request: RequestContext,
+  ): Promise<RestoreResourceResult> {
+    return this.recovery.restoreDocument(
+      request.principal,
+      parseRequest(OpaqueIdSchema, id),
+      parseRequest(RestoreResourceRequestSchema, body),
+      request.requestId,
+    );
+  }
+
+  @Delete(":id")
+  public delete(
+    @Param("id") id: string,
+    @Req() request: RequestContext,
+  ): Promise<PermanentDeleteResult> {
+    return this.recovery.deleteDocument(
       request.principal,
       parseRequest(OpaqueIdSchema, id),
       request.requestId,

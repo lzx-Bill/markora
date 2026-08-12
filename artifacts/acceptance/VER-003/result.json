@@ -1,0 +1,14 @@
+{
+  "id": "VER-003",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts: list/detail preview causes no document mutation"
+  ],
+  "browser": "Chromium selected an immutable snapshot and rendered a scoped line comparison while the current editor remained unchanged; restore was disabled when an offline local draft was unsynced.",
+  "artifacts": [
+    "output/playwright/phase4-version-preview-diff.png",
+    "output/playwright/phase4-unsynced-restore-blocked.png"
+  ],
+  "verifiedAt": "2026-08-12T23:40:00+08:00"
+}

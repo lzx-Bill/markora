@@ -1,0 +1,11 @@
+{
+  "id": "TRASH-001",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts: one trashed folder root hides its subtree and Trash does not duplicate descendants"
+  ],
+  "browser": "Chromium Trash displayed type, original path, deletion time and retention eligibility for one logical root.",
+  "artifacts": ["output/playwright/phase4-trash-recovery.png"],
+  "verifiedAt": "2026-08-12T23:40:00+08:00"
+}

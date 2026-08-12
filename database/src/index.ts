@@ -2,6 +2,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/client/client.js";
 
 export type {
+  BackgroundJob,
   Document,
   DocumentSaveReceipt,
   DocumentVersion,
@@ -10,6 +11,8 @@ export type {
 export { Prisma } from "../generated/client/client.js";
 export {
   AuditResult,
+  BackgroundJobState,
+  BackgroundJobType,
   DocumentVersionReason,
   ResourceState,
   UserRole,

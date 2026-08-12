@@ -271,6 +271,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -460,6 +461,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -532,6 +534,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -604,6 +607,216 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
+                            "LIMIT_EXCEEDED",
+                            "INVALID_ENCODING",
+                            "UNSAFE_ARCHIVE",
+                            "PLAN_EXPIRED",
+                            "JOB_NOT_RETRYABLE",
+                            "JOB_NOT_CANCELLABLE",
+                            "SESSION_REVOKED",
+                            "RATE_LIMITED",
+                            "DEPENDENCY_UNAVAILABLE",
+                            "CONFIG_VERSION_CONFLICT",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "permanentlyDeleteFolder",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Restart-safe permanent deletion accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "accepted": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "job": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "PERMANENT_DELETE_FOLDER",
+                            "PERMANENT_DELETE_DOCUMENT"
+                          ]
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "PENDING",
+                            "RUNNING",
+                            "SUCCEEDED",
+                            "SUCCEEDED_WITH_ISSUES",
+                            "FAILED",
+                            "CANCELLED",
+                            "INTERRUPTED"
+                          ]
+                        },
+                        "targetType": {
+                          "type": "string",
+                          "enum": [
+                            "folder",
+                            "document"
+                          ]
+                        },
+                        "targetId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "progress": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "errorCode": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        "startedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "completedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "state",
+                        "targetType",
+                        "targetId",
+                        "progress",
+                        "errorCode",
+                        "createdAt",
+                        "startedAt",
+                        "completedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "accepted",
+                    "job"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Trashed folder absent from this workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDATION_FAILED",
+                            "UNAUTHENTICATED",
+                            "AUTHENTICATION_FAILED",
+                            "PASSWORD_POLICY_FAILED",
+                            "CSRF_FAILED",
+                            "BOOTSTRAP_DISABLED",
+                            "NAME_CONFLICT",
+                            "INVALID_NAME",
+                            "FOLDER_CYCLE",
+                            "NOT_FOUND",
+                            "FORBIDDEN",
+                            "REVISION_CONFLICT",
+                            "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -688,6 +901,184 @@
                   "required": [
                     "success",
                     "trashedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/folders/{id}/restore": {
+      "post": {
+        "operationId": "restoreFolder",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "type": "object",
+                "properties": {
+                  "targetParentId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "conflictStrategy": {
+                    "default": "FAIL",
+                    "type": "string",
+                    "enum": [
+                      "FAIL",
+                      "KEEP_BOTH"
+                    ]
+                  }
+                },
+                "required": [
+                  "conflictStrategy"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Folder subtree restored without overwrite.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "restoredAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "id",
+                    "name",
+                    "parentId",
+                    "restoredAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Restore target or Keep Both resolution required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDATION_FAILED",
+                            "UNAUTHENTICATED",
+                            "AUTHENTICATION_FAILED",
+                            "PASSWORD_POLICY_FAILED",
+                            "CSRF_FAILED",
+                            "BOOTSTRAP_DISABLED",
+                            "NAME_CONFLICT",
+                            "INVALID_NAME",
+                            "FOLDER_CYCLE",
+                            "NOT_FOUND",
+                            "FORBIDDEN",
+                            "REVISION_CONFLICT",
+                            "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
+                            "LIMIT_EXCEEDED",
+                            "INVALID_ENCODING",
+                            "UNSAFE_ARCHIVE",
+                            "PLAN_EXPIRED",
+                            "JOB_NOT_RETRYABLE",
+                            "JOB_NOT_CANCELLABLE",
+                            "SESSION_REVOKED",
+                            "RATE_LIMITED",
+                            "DEPENDENCY_UNAVAILABLE",
+                            "CONFIG_VERSION_CONFLICT",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
                   ],
                   "additionalProperties": false
                 }
@@ -962,6 +1353,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -1034,6 +1426,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -1357,6 +1750,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -1593,6 +1987,216 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
+                            "LIMIT_EXCEEDED",
+                            "INVALID_ENCODING",
+                            "UNSAFE_ARCHIVE",
+                            "PLAN_EXPIRED",
+                            "JOB_NOT_RETRYABLE",
+                            "JOB_NOT_CANCELLABLE",
+                            "SESSION_REVOKED",
+                            "RATE_LIMITED",
+                            "DEPENDENCY_UNAVAILABLE",
+                            "CONFIG_VERSION_CONFLICT",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "permanentlyDeleteDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Restart-safe permanent deletion accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "accepted": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "job": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "PERMANENT_DELETE_FOLDER",
+                            "PERMANENT_DELETE_DOCUMENT"
+                          ]
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "PENDING",
+                            "RUNNING",
+                            "SUCCEEDED",
+                            "SUCCEEDED_WITH_ISSUES",
+                            "FAILED",
+                            "CANCELLED",
+                            "INTERRUPTED"
+                          ]
+                        },
+                        "targetType": {
+                          "type": "string",
+                          "enum": [
+                            "folder",
+                            "document"
+                          ]
+                        },
+                        "targetId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "progress": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "errorCode": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        "startedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "completedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "state",
+                        "targetType",
+                        "targetId",
+                        "progress",
+                        "errorCode",
+                        "createdAt",
+                        "startedAt",
+                        "completedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "accepted",
+                    "job"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Trashed document absent from this workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDATION_FAILED",
+                            "UNAUTHENTICATED",
+                            "AUTHENTICATION_FAILED",
+                            "PASSWORD_POLICY_FAILED",
+                            "CSRF_FAILED",
+                            "BOOTSTRAP_DISABLED",
+                            "NAME_CONFLICT",
+                            "INVALID_NAME",
+                            "FOLDER_CYCLE",
+                            "NOT_FOUND",
+                            "FORBIDDEN",
+                            "REVISION_CONFLICT",
+                            "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -1677,6 +2281,736 @@
                   "required": [
                     "success",
                     "trashedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{id}/restore": {
+      "post": {
+        "operationId": "restoreDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "type": "object",
+                "properties": {
+                  "targetParentId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "conflictStrategy": {
+                    "default": "FAIL",
+                    "type": "string",
+                    "enum": [
+                      "FAIL",
+                      "KEEP_BOTH"
+                    ]
+                  }
+                },
+                "required": [
+                  "conflictStrategy"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Document restored without overwrite.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "restoredAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "id",
+                    "name",
+                    "parentId",
+                    "restoredAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Restore target or Keep Both resolution required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDATION_FAILED",
+                            "UNAUTHENTICATED",
+                            "AUTHENTICATION_FAILED",
+                            "PASSWORD_POLICY_FAILED",
+                            "CSRF_FAILED",
+                            "BOOTSTRAP_DISABLED",
+                            "NAME_CONFLICT",
+                            "INVALID_NAME",
+                            "FOLDER_CYCLE",
+                            "NOT_FOUND",
+                            "FORBIDDEN",
+                            "REVISION_CONFLICT",
+                            "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
+                            "LIMIT_EXCEEDED",
+                            "INVALID_ENCODING",
+                            "UNSAFE_ARCHIVE",
+                            "PLAN_EXPIRED",
+                            "JOB_NOT_RETRYABLE",
+                            "JOB_NOT_CANCELLABLE",
+                            "SESSION_REVOKED",
+                            "RATE_LIMITED",
+                            "DEPENDENCY_UNAVAILABLE",
+                            "CONFIG_VERSION_CONFLICT",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{documentId}/versions": {
+      "get": {
+        "operationId": "listDocumentVersions",
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Immutable document version metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "versionNo": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "documentName": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "enum": [
+                              "AUTO_SAVE",
+                              "CONFLICT_OVERWRITE",
+                              "RESTORE",
+                              "IMPORT_REPLACE"
+                            ]
+                          },
+                          "sourceRevision": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "actor": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "displayName"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "versionNo",
+                          "documentName",
+                          "reason",
+                          "sourceRevision",
+                          "actor",
+                          "createdAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "retentionDays": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "nextCursor": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "retentionDays",
+                    "nextCursor"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document absent from this workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDATION_FAILED",
+                            "UNAUTHENTICATED",
+                            "AUTHENTICATION_FAILED",
+                            "PASSWORD_POLICY_FAILED",
+                            "CSRF_FAILED",
+                            "BOOTSTRAP_DISABLED",
+                            "NAME_CONFLICT",
+                            "INVALID_NAME",
+                            "FOLDER_CYCLE",
+                            "NOT_FOUND",
+                            "FORBIDDEN",
+                            "REVISION_CONFLICT",
+                            "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
+                            "LIMIT_EXCEEDED",
+                            "INVALID_ENCODING",
+                            "UNSAFE_ARCHIVE",
+                            "PLAN_EXPIRED",
+                            "JOB_NOT_RETRYABLE",
+                            "JOB_NOT_CANCELLABLE",
+                            "SESSION_REVOKED",
+                            "RATE_LIMITED",
+                            "DEPENDENCY_UNAVAILABLE",
+                            "CONFIG_VERSION_CONFLICT",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{documentId}/versions/{versionId}": {
+      "get": {
+        "operationId": "getDocumentVersion",
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "versionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Immutable version content for preview and diff.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "versionNo": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "documentName": {
+                      "type": "string"
+                    },
+                    "reason": {
+                      "type": "string",
+                      "enum": [
+                        "AUTO_SAVE",
+                        "CONFLICT_OVERWRITE",
+                        "RESTORE",
+                        "IMPORT_REPLACE"
+                      ]
+                    },
+                    "sourceRevision": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "actor": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "displayName": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "displayName"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                    },
+                    "documentId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "markdown": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "versionNo",
+                    "documentName",
+                    "reason",
+                    "sourceRevision",
+                    "actor",
+                    "createdAt",
+                    "documentId",
+                    "markdown"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document version absent from this workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDATION_FAILED",
+                            "UNAUTHENTICATED",
+                            "AUTHENTICATION_FAILED",
+                            "PASSWORD_POLICY_FAILED",
+                            "CSRF_FAILED",
+                            "BOOTSTRAP_DISABLED",
+                            "NAME_CONFLICT",
+                            "INVALID_NAME",
+                            "FOLDER_CYCLE",
+                            "NOT_FOUND",
+                            "FORBIDDEN",
+                            "REVISION_CONFLICT",
+                            "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
+                            "LIMIT_EXCEEDED",
+                            "INVALID_ENCODING",
+                            "UNSAFE_ARCHIVE",
+                            "PLAN_EXPIRED",
+                            "JOB_NOT_RETRYABLE",
+                            "JOB_NOT_CANCELLABLE",
+                            "SESSION_REVOKED",
+                            "RATE_LIMITED",
+                            "DEPENDENCY_UNAVAILABLE",
+                            "CONFIG_VERSION_CONFLICT",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{documentId}/versions/{versionId}/restore": {
+      "post": {
+        "operationId": "restoreDocumentVersion",
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "versionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "type": "object",
+                "properties": {
+                  "baseRevision": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "baseRevision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Version restored after snapshotting current state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "documentId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "revision": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "restoredVersionId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "safetyVersionId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "restoredAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                    }
+                  },
+                  "required": [
+                    "documentId",
+                    "revision",
+                    "restoredVersionId",
+                    "safetyVersionId",
+                    "restoredAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Current revision changed or historical name conflicts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDATION_FAILED",
+                            "UNAUTHENTICATED",
+                            "AUTHENTICATION_FAILED",
+                            "PASSWORD_POLICY_FAILED",
+                            "CSRF_FAILED",
+                            "BOOTSTRAP_DISABLED",
+                            "NAME_CONFLICT",
+                            "INVALID_NAME",
+                            "FOLDER_CYCLE",
+                            "NOT_FOUND",
+                            "FORBIDDEN",
+                            "REVISION_CONFLICT",
+                            "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
+                            "LIMIT_EXCEEDED",
+                            "INVALID_ENCODING",
+                            "UNSAFE_ARCHIVE",
+                            "PLAN_EXPIRED",
+                            "JOB_NOT_RETRYABLE",
+                            "JOB_NOT_CANCELLABLE",
+                            "SESSION_REVOKED",
+                            "RATE_LIMITED",
+                            "DEPENDENCY_UNAVAILABLE",
+                            "CONFIG_VERSION_CONFLICT",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
                   ],
                   "additionalProperties": false
                 }
@@ -1802,6 +3136,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -1874,6 +3209,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -1946,6 +3282,333 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
+                            "LIMIT_EXCEEDED",
+                            "INVALID_ENCODING",
+                            "UNSAFE_ARCHIVE",
+                            "PLAN_EXPIRED",
+                            "JOB_NOT_RETRYABLE",
+                            "JOB_NOT_CANCELLABLE",
+                            "SESSION_REVOKED",
+                            "RATE_LIMITED",
+                            "DEPENDENCY_UNAVAILABLE",
+                            "CONFIG_VERSION_CONFLICT",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/trash": {
+      "get": {
+        "operationId": "listTrash",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "FOLDER",
+                "DOCUMENT"
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logical Trash roots with recovery metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "FOLDER",
+                              "DOCUMENT"
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "originalParentId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "originalPath": {
+                            "type": "string"
+                          },
+                          "deletedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                          },
+                          "permanentlyDeletableAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "TRASHED",
+                              "DELETING"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "name",
+                          "originalParentId",
+                          "originalPath",
+                          "deletedAt",
+                          "permanentlyDeletableAt",
+                          "state"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "retentionDays": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "nextCursor": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "retentionDays",
+                    "nextCursor"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{id}": {
+      "get": {
+        "operationId": "getJob",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Owned durable job state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "PERMANENT_DELETE_FOLDER",
+                        "PERMANENT_DELETE_DOCUMENT"
+                      ]
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "RUNNING",
+                        "SUCCEEDED",
+                        "SUCCEEDED_WITH_ISSUES",
+                        "FAILED",
+                        "CANCELLED",
+                        "INTERRUPTED"
+                      ]
+                    },
+                    "targetType": {
+                      "type": "string",
+                      "enum": [
+                        "folder",
+                        "document"
+                      ]
+                    },
+                    "targetId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "progress": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "errorCode": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                    },
+                    "startedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "completedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "state",
+                    "targetType",
+                    "targetId",
+                    "progress",
+                    "errorCode",
+                    "createdAt",
+                    "startedAt",
+                    "completedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job absent from this workspace or owner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDATION_FAILED",
+                            "UNAUTHENTICATED",
+                            "AUTHENTICATION_FAILED",
+                            "PASSWORD_POLICY_FAILED",
+                            "CSRF_FAILED",
+                            "BOOTSTRAP_DISABLED",
+                            "NAME_CONFLICT",
+                            "INVALID_NAME",
+                            "FOLDER_CYCLE",
+                            "NOT_FOUND",
+                            "FORBIDDEN",
+                            "REVISION_CONFLICT",
+                            "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -2122,6 +3785,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -2194,6 +3858,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -2361,6 +4026,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -2595,6 +4261,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",
@@ -2793,6 +4460,7 @@
                             "FORBIDDEN",
                             "REVISION_CONFLICT",
                             "RESOURCE_STATE_CONFLICT",
+                            "RESTORE_TARGET_REQUIRED",
                             "LIMIT_EXCEEDED",
                             "INVALID_ENCODING",
                             "UNSAFE_ARCHIVE",

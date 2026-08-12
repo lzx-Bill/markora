@@ -75,7 +75,10 @@ schema validation and production builds. Integration tests always target real Po
 `WORKSPACE_MAX_DEPTH`, `WORKSPACE_NAME_MAX_CODE_POINTS`, and `DOCUMENT_MAX_BYTES` are typed startup
 configuration. `DOCUMENT_LARGE_BYTES`, `DOCUMENT_LARGE_LINES`, and
 `VERSION_SNAPSHOT_INTERVAL_MINUTES` control the Phase 3 safety mode and routine immutable version
-snapshots. Folder and document mutations use stable IDs and are always scoped from the
+snapshots. `VERSION_RETENTION_DAYS` prunes only routine `AUTO_SAVE` snapshots; protected
+Replace/conflict/restore snapshots remain available. `TRASH_RETENTION_DAYS` controls when logical
+Trash roots become eligible for automatic permanent deletion. Folder and document mutations use
+stable IDs and are always scoped from the
 authenticated principal; callers never provide a workspace ID. The Web route
 `/documents/<document-id>` therefore survives folder and ancestor rename/move operations.
 
@@ -90,3 +93,17 @@ Only a matching server acknowledgement removes it. Reloading with a divergent dr
 Review/Restore/Discard; already-open documents remain editable offline, while tree/search and other
 documents are explicitly not advertised as available. Small explicit selections can be downloaded
 locally; durable folder/workspace export remains Phase 6 work.
+
+## Versions, Trash and deletion worker
+
+Version history is available from the document header. Selecting a snapshot only previews and
+diffs it; restore is disabled while an unsynced local draft exists. Restore requires the current
+revision and creates a safety snapshot before changing current content.
+
+Trash is available at `/trash`. Restore defaults to the captured original location and never
+overwrites an active sibling. Choose an active target when the original parent no longer exists,
+or enable Keep Both to allocate a deterministic sibling name. Permanent deletion immediately makes
+the root unavailable and queues a durable job. `DELETE_BATCH_SIZE`, `JOB_LEASE_SECONDS`, and
+`WORKER_POLL_MS` bound and schedule processing; expired leases are safe to reclaim after restart.
+App-level deletion does not remove existing database backups; production must apply the Phase 8
+backup retention and restore-runbook controls.
