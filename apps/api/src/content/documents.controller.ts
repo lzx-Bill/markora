@@ -5,10 +5,12 @@ import {
   type DocumentDetail,
   type DocumentList,
   OpaqueIdSchema,
+  SaveDocumentContentRequestSchema,
+  type SaveDocumentContentResult,
   type TrashResult,
   UpdateDocumentRequestSchema,
 } from "@markora/contracts";
-import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Patch, Post, Put, Query, Req } from "@nestjs/common";
 import type { RequestContext } from "../http/request-context.js";
 import { parseRequest } from "../http/validation.js";
 import { ContentService } from "./content.service.js";
@@ -62,6 +64,20 @@ export class DocumentsController {
       request.principal,
       parseRequest(OpaqueIdSchema, id),
       parseRequest(UpdateDocumentRequestSchema, body),
+      request.requestId,
+    );
+  }
+
+  @Put(":id/content")
+  public saveContent(
+    @Param("id") id: string,
+    @Body() body: unknown,
+    @Req() request: RequestContext,
+  ): Promise<SaveDocumentContentResult> {
+    return this.content.saveDocumentContent(
+      request.principal,
+      parseRequest(OpaqueIdSchema, id),
+      parseRequest(SaveDocumentContentRequestSchema, body),
       request.requestId,
     );
   }

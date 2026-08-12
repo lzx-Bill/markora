@@ -1,0 +1,9 @@
+{
+  "id": "DRAFT-002",
+  "status": "passed",
+  "automated": ["apps/web/src/draft-storage.test.ts > discards only the requested document draft"],
+  "browser": "Reloaded with divergent IndexedDB content; Review displayed local/server copies and Restore saved a new revision without automatic overwrite.",
+  "artifacts": ["output/playwright/phase3-draft-recovery-review.png"],
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

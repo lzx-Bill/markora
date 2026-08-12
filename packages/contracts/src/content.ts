@@ -78,9 +78,26 @@ export const DocumentDetailSchema = DocumentSummarySchema.extend({
   breadcrumbs: z.array(BreadcrumbSchema),
   capabilities: z.object({
     source: z.literal(true),
-    wysiwyg: z.literal(false),
-    split: z.literal(false),
+    wysiwyg: z.boolean(),
+    split: z.boolean(),
+    largeDocument: z.boolean(),
   }),
+});
+
+export const SaveDocumentContentRequestSchema = z
+  .object({
+    markdown: z.string(),
+    baseRevision: z.number().int().positive(),
+    clientMutationId: OpaqueIdSchema,
+    conflictResolution: z.literal("OVERWRITE_SERVER").optional(),
+  })
+  .strict();
+
+export const SaveDocumentContentResultSchema = z.object({
+  documentId: OpaqueIdSchema,
+  revision: z.number().int().positive(),
+  savedAt: z.iso.datetime(),
+  versionCreated: z.boolean(),
 });
 
 export const DocumentListSchema = z.object({ data: z.array(DocumentSummarySchema) });
@@ -138,6 +155,8 @@ export type UpdateFolderRequest = z.infer<typeof UpdateFolderRequestSchema>;
 export type DocumentSummary = z.infer<typeof DocumentSummarySchema>;
 export type DocumentDetail = z.infer<typeof DocumentDetailSchema>;
 export type DocumentList = z.infer<typeof DocumentListSchema>;
+export type SaveDocumentContentRequest = z.infer<typeof SaveDocumentContentRequestSchema>;
+export type SaveDocumentContentResult = z.infer<typeof SaveDocumentContentResultSchema>;
 export type CreateDocumentRequest = z.infer<typeof CreateDocumentRequestSchema>;
 export type UpdateDocumentRequest = z.infer<typeof UpdateDocumentRequestSchema>;
 export type BulkDocumentRequest = z.infer<typeof BulkDocumentRequestSchema>;

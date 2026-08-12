@@ -901,18 +901,20 @@
                           "const": true
                         },
                         "wysiwyg": {
-                          "type": "boolean",
-                          "const": false
+                          "type": "boolean"
                         },
                         "split": {
-                          "type": "boolean",
-                          "const": false
+                          "type": "boolean"
+                        },
+                        "largeDocument": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
                         "source",
                         "wysiwyg",
-                        "split"
+                        "split",
+                        "largeDocument"
                       ],
                       "additionalProperties": false
                     }
@@ -1294,18 +1296,20 @@
                           "const": true
                         },
                         "wysiwyg": {
-                          "type": "boolean",
-                          "const": false
+                          "type": "boolean"
                         },
                         "split": {
-                          "type": "boolean",
-                          "const": false
+                          "type": "boolean"
+                        },
+                        "largeDocument": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
                         "source",
                         "wysiwyg",
-                        "split"
+                        "split",
+                        "largeDocument"
                       ],
                       "additionalProperties": false
                     }
@@ -1528,18 +1532,20 @@
                           "const": true
                         },
                         "wysiwyg": {
-                          "type": "boolean",
-                          "const": false
+                          "type": "boolean"
                         },
                         "split": {
-                          "type": "boolean",
-                          "const": false
+                          "type": "boolean"
+                        },
+                        "largeDocument": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
                         "source",
                         "wysiwyg",
-                        "split"
+                        "split",
+                        "largeDocument"
                       ],
                       "additionalProperties": false
                     }
@@ -1671,6 +1677,314 @@
                   "required": [
                     "success",
                     "trashedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{id}/content": {
+      "put": {
+        "operationId": "saveDocumentContent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "type": "object",
+                "properties": {
+                  "markdown": {
+                    "type": "string"
+                  },
+                  "baseRevision": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "clientMutationId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "conflictResolution": {
+                    "type": "string",
+                    "const": "OVERWRITE_SERVER"
+                  }
+                },
+                "required": [
+                  "markdown",
+                  "baseRevision",
+                  "clientMutationId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Revision-guarded Markdown save acknowledged by the server.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "documentId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "revision": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "savedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                    },
+                    "versionCreated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "documentId",
+                    "revision",
+                    "savedAt",
+                    "versionCreated"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document absent from this workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDATION_FAILED",
+                            "UNAUTHENTICATED",
+                            "AUTHENTICATION_FAILED",
+                            "PASSWORD_POLICY_FAILED",
+                            "CSRF_FAILED",
+                            "BOOTSTRAP_DISABLED",
+                            "NAME_CONFLICT",
+                            "INVALID_NAME",
+                            "FOLDER_CYCLE",
+                            "NOT_FOUND",
+                            "FORBIDDEN",
+                            "REVISION_CONFLICT",
+                            "RESOURCE_STATE_CONFLICT",
+                            "LIMIT_EXCEEDED",
+                            "INVALID_ENCODING",
+                            "UNSAFE_ARCHIVE",
+                            "PLAN_EXPIRED",
+                            "JOB_NOT_RETRYABLE",
+                            "JOB_NOT_CANCELLABLE",
+                            "SESSION_REVOKED",
+                            "RATE_LIMITED",
+                            "DEPENDENCY_UNAVAILABLE",
+                            "CONFIG_VERSION_CONFLICT",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Base revision is stale; server content is unchanged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDATION_FAILED",
+                            "UNAUTHENTICATED",
+                            "AUTHENTICATION_FAILED",
+                            "PASSWORD_POLICY_FAILED",
+                            "CSRF_FAILED",
+                            "BOOTSTRAP_DISABLED",
+                            "NAME_CONFLICT",
+                            "INVALID_NAME",
+                            "FOLDER_CYCLE",
+                            "NOT_FOUND",
+                            "FORBIDDEN",
+                            "REVISION_CONFLICT",
+                            "RESOURCE_STATE_CONFLICT",
+                            "LIMIT_EXCEEDED",
+                            "INVALID_ENCODING",
+                            "UNSAFE_ARCHIVE",
+                            "PLAN_EXPIRED",
+                            "JOB_NOT_RETRYABLE",
+                            "JOB_NOT_CANCELLABLE",
+                            "SESSION_REVOKED",
+                            "RATE_LIMITED",
+                            "DEPENDENCY_UNAVAILABLE",
+                            "CONFIG_VERSION_CONFLICT",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Markdown exceeds the configured size limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "VALIDATION_FAILED",
+                            "UNAUTHENTICATED",
+                            "AUTHENTICATION_FAILED",
+                            "PASSWORD_POLICY_FAILED",
+                            "CSRF_FAILED",
+                            "BOOTSTRAP_DISABLED",
+                            "NAME_CONFLICT",
+                            "INVALID_NAME",
+                            "FOLDER_CYCLE",
+                            "NOT_FOUND",
+                            "FORBIDDEN",
+                            "REVISION_CONFLICT",
+                            "RESOURCE_STATE_CONFLICT",
+                            "LIMIT_EXCEEDED",
+                            "INVALID_ENCODING",
+                            "UNSAFE_ARCHIVE",
+                            "PLAN_EXPIRED",
+                            "JOB_NOT_RETRYABLE",
+                            "JOB_NOT_CANCELLABLE",
+                            "SESSION_REVOKED",
+                            "RATE_LIMITED",
+                            "DEPENDENCY_UNAVAILABLE",
+                            "CONFIG_VERSION_CONFLICT",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
                   ],
                   "additionalProperties": false
                 }

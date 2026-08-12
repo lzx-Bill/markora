@@ -28,83 +28,130 @@ enum ResourceState {
   DELETING
 }
 
+enum DocumentVersionReason {
+  AUTO_SAVE
+  CONFLICT_OVERWRITE
+}
+
 model User {
-  id                 String        @id @default(uuid()) @db.Uuid
+  id                 String            @id @default(uuid()) @db.Uuid
   username           String
-  usernameCanonical  String        @unique @map("username_canonical")
+  usernameCanonical  String            @unique @map("username_canonical")
   email              String
-  emailCanonical     String        @unique @map("email_canonical")
-  displayName        String        @map("display_name")
-  passwordHash       String        @map("password_hash")
-  role               UserRole      @default(USER)
-  status             UserStatus    @default(ACTIVE)
-  mustChangePassword Boolean       @default(false) @map("must_change_password")
-  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  emailCanonical     String            @unique @map("email_canonical")
+  displayName        String            @map("display_name")
+  passwordHash       String            @map("password_hash")
+  role               UserRole          @default(USER)
+  status             UserStatus        @default(ACTIVE)
+  mustChangePassword Boolean           @default(false) @map("must_change_password")
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
   workspace          Workspace?
   sessions           Session[]
-  auditEvents         AuditEvent[]  @relation("AuditActor")
+  auditEvents        AuditEvent[]      @relation("AuditActor")
+  documentVersions   DocumentVersion[]
 
   @@map("users")
 }
 
 model Workspace {
-  id          String       @id @default(uuid()) @db.Uuid
-  ownerUserId String       @unique @map("owner_user_id") @db.Uuid
-  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  owner       User         @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
-  auditEvents AuditEvent[]
-  folders     Folder[]
-  documents   Document[]
+  id               String            @id @default(uuid()) @db.Uuid
+  ownerUserId      String            @unique @map("owner_user_id") @db.Uuid
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  owner            User              @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
+  auditEvents      AuditEvent[]
+  folders          Folder[]
+  documents        Document[]
+  documentVersions DocumentVersion[]
 
   @@map("workspaces")
 }
 
 model Folder {
-  id               String        @id @default(uuid()) @db.Uuid
-  workspaceId      String        @map("workspace_id") @db.Uuid
-  parentId         String?       @map("parent_id") @db.Uuid
-  name             String
-  normalizedName   String        @map("normalized_name")
-  state            ResourceState @default(ACTIVE)
-  originalParentId String?       @map("original_parent_id") @db.Uuid
-  deletedAt        DateTime?     @map("deleted_at") @db.Timestamptz(3)
-  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
-  workspace        Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  parent           Folder?       @relation("FolderHierarchy", fields: [parentId, workspaceId], references: [id, workspaceId], onDelete: Restrict)
-  children         Folder[]      @relation("FolderHierarchy")
-  originalParent   Folder?       @relation("FolderOriginalParent", fields: [originalParentId], references: [id], onDelete: SetNull)
-  originalChildren Folder[]      @relation("FolderOriginalParent")
-  documents        Document[]    @relation("DocumentFolder")
-  originalDocuments Document[]   @relation("DocumentOriginalFolder")
+  id                String        @id @default(uuid()) @db.Uuid
+  workspaceId       String        @map("workspace_id") @db.Uuid
+  parentId          String?       @map("parent_id") @db.Uuid
+  name              String
+  normalizedName    String        @map("normalized_name")
+  state             ResourceState @default(ACTIVE)
+  originalParentId  String?       @map("original_parent_id") @db.Uuid
+  deletedAt         DateTime?     @map("deleted_at") @db.Timestamptz(3)
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  workspace         Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent            Folder?       @relation("FolderHierarchy", fields: [parentId, workspaceId], references: [id, workspaceId], onDelete: Restrict)
+  children          Folder[]      @relation("FolderHierarchy")
+  originalParent    Folder?       @relation("FolderOriginalParent", fields: [originalParentId], references: [id], onDelete: SetNull)
+  originalChildren  Folder[]      @relation("FolderOriginalParent")
+  documents         Document[]    @relation("DocumentFolder")
+  originalDocuments Document[]    @relation("DocumentOriginalFolder")
 
+  @@unique([id, workspaceId])
   @@index([workspaceId, state, parentId])
   @@index([parentId])
-  @@unique([id, workspaceId])
   @@map("folders")
 }
 
 model Document {
-  id               String        @id @default(uuid()) @db.Uuid
-  workspaceId      String        @map("workspace_id") @db.Uuid
-  folderId         String?       @map("folder_id") @db.Uuid
+  id               String                @id @default(uuid()) @db.Uuid
+  workspaceId      String                @map("workspace_id") @db.Uuid
+  folderId         String?               @map("folder_id") @db.Uuid
   name             String
-  normalizedName   String        @map("normalized_name")
-  markdown         String        @default("")
-  revision         Int           @default(1)
-  state            ResourceState @default(ACTIVE)
-  originalFolderId String?       @map("original_folder_id") @db.Uuid
-  deletedAt        DateTime?     @map("deleted_at") @db.Timestamptz(3)
-  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
-  workspace        Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  folder           Folder?       @relation("DocumentFolder", fields: [folderId, workspaceId], references: [id, workspaceId], onDelete: Restrict)
-  originalFolder   Folder?       @relation("DocumentOriginalFolder", fields: [originalFolderId], references: [id], onDelete: SetNull)
+  normalizedName   String                @map("normalized_name")
+  markdown         String                @default("")
+  revision         Int                   @default(1)
+  state            ResourceState         @default(ACTIVE)
+  originalFolderId String?               @map("original_folder_id") @db.Uuid
+  deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(3)
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  workspace        Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  folder           Folder?               @relation("DocumentFolder", fields: [folderId, workspaceId], references: [id, workspaceId], onDelete: Restrict)
+  originalFolder   Folder?               @relation("DocumentOriginalFolder", fields: [originalFolderId], references: [id], onDelete: SetNull)
+  versions         DocumentVersion[]
+  saveReceipts     DocumentSaveReceipt[]
 
+  @@unique([id, workspaceId])
   @@index([workspaceId, state, folderId, updatedAt(sort: Desc)])
   @@index([folderId])
   @@map("documents")
+}
+
+model DocumentVersion {
+  id             String                @id @default(uuid()) @db.Uuid
+  documentId     String                @map("document_id") @db.Uuid
+  workspaceId    String                @map("workspace_id") @db.Uuid
+  versionNo      Int                   @map("version_no")
+  markdown       String
+  documentName   String                @map("document_name")
+  reason         DocumentVersionReason
+  sourceRevision Int                   @map("source_revision")
+  actorId        String                @map("actor_id") @db.Uuid
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  document       Document              @relation(fields: [documentId, workspaceId], references: [id, workspaceId], onDelete: Cascade)
+  workspace      Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actor          User                  @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@unique([documentId, versionNo])
+  @@index([workspaceId, documentId, versionNo(sort: Desc)])
+  @@map("document_versions")
+}
+
+model DocumentSaveReceipt {
+  id               String   @id @default(uuid()) @db.Uuid
+  documentId       String   @map("document_id") @db.Uuid
+  workspaceId      String   @map("workspace_id") @db.Uuid
+  clientMutationId String   @map("client_mutation_id") @db.Uuid
+  baseRevision     Int      @map("base_revision")
+  markdownHash     String   @map("markdown_hash")
+  resultRevision   Int      @map("result_revision")
+  versionCreated   Boolean  @map("version_created")
+  savedAt          DateTime @default(now()) @map("saved_at") @db.Timestamptz(3)
+  document         Document @relation(fields: [documentId, workspaceId], references: [id, workspaceId], onDelete: Cascade)
+
+  @@unique([documentId, clientMutationId])
+  @@index([workspaceId, savedAt(sort: Desc)])
+  @@map("document_save_receipts")
 }
 
 model Session {
@@ -124,18 +171,18 @@ model Session {
 }
 
 model AuditEvent {
-  id          String       @id @default(uuid()) @db.Uuid
-  occurredAt  DateTime     @default(now()) @map("occurred_at") @db.Timestamptz(3)
-  actorUserId String?      @map("actor_user_id") @db.Uuid
-  workspaceId String?      @map("workspace_id") @db.Uuid
+  id          String      @id @default(uuid()) @db.Uuid
+  occurredAt  DateTime    @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  actorUserId String?     @map("actor_user_id") @db.Uuid
+  workspaceId String?     @map("workspace_id") @db.Uuid
   action      String
-  targetType  String       @map("target_type")
-  targetId    String?      @map("target_id")
+  targetType  String      @map("target_type")
+  targetId    String?     @map("target_id")
   result      AuditResult
-  requestId   String       @map("request_id")
-  metadata    Json         @default("{}") @map("metadata_json") @db.JsonB
-  actor       User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-  workspace   Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  requestId   String      @map("request_id")
+  metadata    Json        @default("{}") @map("metadata_json") @db.JsonB
+  actor       User?       @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  workspace   Workspace?  @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
 
   @@index([occurredAt(sort: Desc)])
   @@index([actorUserId, action, result])
@@ -143,13 +190,13 @@ model AuditEvent {
 }
 
 model LoginAttempt {
-  id          String    @id @default(uuid()) @db.Uuid
-  subjectHash String    @map("subject_hash")
-  networkHash String    @map("network_hash")
-  windowStart DateTime  @map("window_start") @db.Timestamptz(3)
-  count       Int       @default(0)
+  id           String    @id @default(uuid()) @db.Uuid
+  subjectHash  String    @map("subject_hash")
+  networkHash  String    @map("network_hash")
+  windowStart  DateTime  @map("window_start") @db.Timestamptz(3)
+  count        Int       @default(0)
   blockedUntil DateTime? @map("blocked_until") @db.Timestamptz(3)
-  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@unique([subjectHash, networkHash, windowStart])
   @@index([blockedUntil])

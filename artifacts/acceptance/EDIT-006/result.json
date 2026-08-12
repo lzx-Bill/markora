@@ -1,0 +1,11 @@
+{
+  "id": "EDIT-006",
+  "status": "passed",
+  "automated": [
+    "packages/markdown/src/index.test.ts > removes scripts, handlers and unsafe URL protocols without changing source"
+  ],
+  "browser": "Evaluated the rendered DOM: no scripts, event handlers, unsafe links or external images existed and the XSS sentinel remained false while Source retained the input.",
+  "artifacts": ["output/playwright/phase3-desktop-split-safe-render.png"],
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

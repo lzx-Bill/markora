@@ -1,0 +1,9 @@
+{
+  "id": "DRAFT-004",
+  "status": "passed",
+  "automated": ["apps/web/src/DocumentWorkspace.tsx offline availability notice"],
+  "browser": "Offline notice states only the already-open document remains editable and other workspace data is unavailable.",
+  "artifacts": ["output/playwright/phase3-offline-draft-safe.png"],
+  "environment": "Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

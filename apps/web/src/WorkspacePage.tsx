@@ -6,8 +6,9 @@ import type {
 } from "@markora/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { strToU8, zipSync } from "fflate";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { DocumentWorkspace } from "./DocumentWorkspace.js";
 import {
   bulkDocuments,
   createDocument,
@@ -71,6 +72,8 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [action, setAction] = useState<Action | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [unsyncedDocumentId, setUnsyncedDocumentId] = useState<string | null>(null);
+  const handleUnsyncedChange = useCallback((id: string | null) => setUnsyncedDocumentId(id), []);
 
   const treeQuery = useQuery({ queryKey: ["folders", "tree"], queryFn: getFolderTree });
   const folders = useMemo(() => flattenFolders(treeQuery.data?.data ?? []), [treeQuery.data]);
@@ -113,7 +116,7 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
     onSuccess: async (document) => {
       setAction(null);
       await invalidateNavigation();
-      navigate(`/documents/${document.id}`);
+      navigateToDocument(document.id);
     },
     onError: (error) => setActionError(error.message),
   });
@@ -395,7 +398,7 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
               <button
                 className={documentId === document.id ? "selected" : undefined}
                 type="button"
-                onClick={() => navigate(`/documents/${document.id}`)}
+                onClick={() => navigateToDocument(document.id)}
               >
                 <span className="document-icon" aria-hidden="true">
                   ▤
@@ -431,7 +434,11 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
           />
         ) : null}
         {documentQuery.data ? (
-          <DocumentSurface document={documentQuery.data} onAction={openAction} />
+          <DocumentSurface
+            document={documentQuery.data}
+            onAction={openAction}
+            onUnsyncedChange={handleUnsyncedChange}
+          />
         ) : !documentId ? (
           <div className="workspace-empty">
             <p className="eyebrow">MARKORA V1</p>
@@ -521,6 +528,19 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
   function selectFolder(id: string | null) {
     setSelectedFolderId(id);
     setSelectedIds(new Set());
+  }
+
+  function navigateToDocument(id: string) {
+    if (
+      unsyncedDocumentId &&
+      unsyncedDocumentId !== id &&
+      !window.confirm(
+        "This document has an unsynced local draft. Leave it open in local recovery storage and continue?",
+      )
+    ) {
+      return;
+    }
+    navigate(`/documents/${id}`);
   }
 }
 
@@ -629,45 +649,27 @@ function FolderTreeItem({
 function DocumentSurface({
   document,
   onAction,
+  onUnsyncedChange,
 }: {
   readonly document: DocumentDetail;
   readonly onAction: (action: Action) => void;
+  readonly onUnsyncedChange: (documentId: string | null) => void;
 }) {
   return (
-    <>
-      <header className="document-header">
-        <div>
-          <p className="document-path">
-            {document.breadcrumbs.map((item) => item.name).join(" / ") || "Workspace root"}
-          </p>
-          <h1>{document.name}</h1>
-          <span className="save-status">
-            <i /> Revision {document.revision}
-          </span>
-        </div>
-        <div className="document-actions">
-          <button type="button" onClick={() => onAction({ kind: "rename-document", document })}>
-            Rename
-          </button>
-          <button type="button" onClick={() => onAction({ kind: "move-document", document })}>
-            Move
-          </button>
-          <button type="button" onClick={() => onAction({ kind: "trash-document", document })}>
-            Trash
-          </button>
-        </div>
-      </header>
-      <div className="editor-toolbar" role="toolbar" aria-label="Document mode">
-        <button className="active" type="button" aria-pressed="true">
-          Source preview
-        </button>
-      </div>
-      <div className="editor-stage">
-        <article className="editor-paper source-paper" aria-label="Markdown source preview">
-          <pre>{document.markdown || "This document is empty."}</pre>
-        </article>
-      </div>
-    </>
+    <DocumentWorkspace
+      key={document.id}
+      document={document}
+      onMetadataAction={(kind) =>
+        onAction(
+          kind === "rename"
+            ? { kind: "rename-document", document }
+            : kind === "move"
+              ? { kind: "move-document", document }
+              : { kind: "trash-document", document },
+        )
+      }
+      onUnsyncedChange={onUnsyncedChange}
+    />
   );
 }
 

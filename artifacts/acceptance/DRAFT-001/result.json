@@ -1,0 +1,10 @@
+{
+  "id": "DRAFT-001",
+  "status": "passed",
+  "automated": [
+    "apps/web/src/draft-storage.test.ts > keeps a versioned draft until the matching Markdown is acknowledged"
+  ],
+  "browser": "Unsynced edits immediately displayed Local draft safe; a matching server acknowledgement removed the draft.",
+  "environment": "fake-indexeddb and Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

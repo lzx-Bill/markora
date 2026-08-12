@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { loadServerConfig } from "@markora/config";
 import type {
   BulkDocumentRequest,
@@ -11,12 +12,14 @@ import type {
   FolderTree,
   FolderTreeNode,
   Principal,
+  SaveDocumentContentRequest,
+  SaveDocumentContentResult,
   TrashResult,
   UpdateDocumentRequest,
   UpdateFolderRequest,
   WorkspaceSummary,
 } from "@markora/contracts";
-import { Prisma, ResourceState } from "@markora/database";
+import { DocumentVersionReason, Prisma, ResourceState } from "@markora/database";
 import {
   analyzeHierarchy,
   assertFolderMove,
@@ -361,6 +364,165 @@ export class ContentService {
     }
   }
 
+  public async saveDocumentContent(
+    principal: Principal,
+    documentId: string,
+    input: SaveDocumentContentRequest,
+    requestId: string,
+  ): Promise<SaveDocumentContentResult> {
+    if (Buffer.byteLength(input.markdown, "utf8") > this.config.DOCUMENT_MAX_BYTES) {
+      throw new CodedHttpException("LIMIT_EXCEEDED", "The Markdown document is too large.", 413);
+    }
+    const markdownHash = createHash("sha256").update(input.markdown).digest("hex");
+    try {
+      return await this.database.client.$transaction(
+        async (transaction) => {
+          const current = await transaction.document.findFirst({
+            where: {
+              id: documentId,
+              workspaceId: principal.workspaceId,
+              state: ResourceState.ACTIVE,
+            },
+          });
+          if (!current) this.throwNotFound("Document");
+          const folders = await visibleFolders(transaction, principal.workspaceId);
+          if (current.folderId && !folders.some((folder) => folder.id === current.folderId)) {
+            this.throwNotFound("Document");
+          }
+
+          const existingReceipt = await transaction.documentSaveReceipt.findUnique({
+            where: {
+              documentId_clientMutationId: {
+                documentId,
+                clientMutationId: input.clientMutationId,
+              },
+            },
+          });
+          if (existingReceipt) {
+            if (
+              existingReceipt.workspaceId !== principal.workspaceId ||
+              existingReceipt.baseRevision !== input.baseRevision ||
+              existingReceipt.markdownHash !== markdownHash
+            ) {
+              throw new CodedHttpException(
+                "RESOURCE_STATE_CONFLICT",
+                "This save identifier was already used for different content.",
+                409,
+              );
+            }
+            return saveResult(existingReceipt);
+          }
+
+          if (current.revision !== input.baseRevision) this.throwRevisionConflict(current);
+          const savedAt = new Date();
+          if (current.markdown === input.markdown) {
+            const receipt = await transaction.documentSaveReceipt.create({
+              data: {
+                documentId,
+                workspaceId: principal.workspaceId,
+                clientMutationId: input.clientMutationId,
+                baseRevision: input.baseRevision,
+                markdownHash,
+                resultRevision: current.revision,
+                versionCreated: false,
+                savedAt,
+              },
+            });
+            await this.audit(
+              transaction,
+              principal,
+              "document.save.noop",
+              "document",
+              documentId,
+              requestId,
+              { revision: current.revision, clientMutationId: input.clientMutationId },
+            );
+            return saveResult(receipt);
+          }
+
+          const latestVersion = await transaction.documentVersion.findFirst({
+            where: { documentId, workspaceId: principal.workspaceId },
+            orderBy: { versionNo: "desc" },
+          });
+          const snapshotCutoff = new Date(
+            savedAt.getTime() - this.config.VERSION_SNAPSHOT_INTERVAL_MINUTES * 60_000,
+          );
+          const versionCreated =
+            input.conflictResolution === "OVERWRITE_SERVER" ||
+            !latestVersion ||
+            latestVersion.createdAt <= snapshotCutoff;
+          if (versionCreated) {
+            await transaction.documentVersion.create({
+              data: {
+                documentId,
+                workspaceId: principal.workspaceId,
+                versionNo: (latestVersion?.versionNo ?? 0) + 1,
+                markdown: current.markdown,
+                documentName: current.name,
+                reason:
+                  input.conflictResolution === "OVERWRITE_SERVER"
+                    ? DocumentVersionReason.CONFLICT_OVERWRITE
+                    : DocumentVersionReason.AUTO_SAVE,
+                sourceRevision: current.revision,
+                actorId: principal.userId,
+                createdAt: savedAt,
+              },
+            });
+          }
+
+          const updated = await transaction.document.updateMany({
+            where: {
+              id: documentId,
+              workspaceId: principal.workspaceId,
+              state: ResourceState.ACTIVE,
+              revision: input.baseRevision,
+            },
+            data: { markdown: input.markdown, revision: { increment: 1 }, updatedAt: savedAt },
+          });
+          if (updated.count !== 1) {
+            const latest = await transaction.document.findFirst({
+              where: { id: documentId, workspaceId: principal.workspaceId },
+            });
+            if (!latest) this.throwNotFound("Document");
+            this.throwRevisionConflict(latest);
+          }
+          const receipt = await transaction.documentSaveReceipt.create({
+            data: {
+              documentId,
+              workspaceId: principal.workspaceId,
+              clientMutationId: input.clientMutationId,
+              baseRevision: input.baseRevision,
+              markdownHash,
+              resultRevision: input.baseRevision + 1,
+              versionCreated,
+              savedAt,
+            },
+          });
+          await this.audit(
+            transaction,
+            principal,
+            "document.save",
+            "document",
+            documentId,
+            requestId,
+            {
+              baseRevision: input.baseRevision,
+              revision: input.baseRevision + 1,
+              bytes: Buffer.byteLength(input.markdown, "utf8"),
+              versionCreated,
+              conflictResolution: input.conflictResolution ?? null,
+              clientMutationId: input.clientMutationId,
+            },
+          );
+          return saveResult(receipt);
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+    } catch (error) {
+      this.rethrowMutationError(error);
+    }
+  }
+
   public async trashDocument(
     principal: Principal,
     documentId: string,
@@ -441,11 +603,22 @@ export class ContentService {
       breadcrumbs.unshift({ id: cursor.id, name: cursor.name });
       cursor = cursor.parentId ? byId.get(cursor.parentId) : undefined;
     }
+    const byteLength = Buffer.byteLength(document.markdown, "utf8");
+    let lineCount = 1;
+    for (const character of document.markdown) if (character === "\n") lineCount += 1;
+    const largeDocument =
+      byteLength >= this.config.DOCUMENT_LARGE_BYTES ||
+      lineCount >= this.config.DOCUMENT_LARGE_LINES;
     return {
       ...documentSummary(document),
       markdown: document.markdown,
       breadcrumbs,
-      capabilities: { source: true, wysiwyg: false, split: false },
+      capabilities: {
+        source: true,
+        wysiwyg: !largeDocument,
+        split: !largeDocument,
+        largeDocument,
+      },
     };
   }
 
@@ -569,6 +742,39 @@ export class ContentService {
       422,
     );
   }
+
+  private throwRevisionConflict(document: {
+    id: string;
+    revision: number;
+    markdown: string;
+    updatedAt: Date;
+  }): never {
+    throw new CodedHttpException(
+      "REVISION_CONFLICT",
+      "The document changed after you opened it. Your local draft is still safe.",
+      409,
+      {
+        documentId: document.id,
+        serverRevision: document.revision,
+        serverSavedAt: document.updatedAt.toISOString(),
+        serverMarkdown: document.markdown,
+      },
+    );
+  }
+}
+
+function saveResult(receipt: {
+  documentId: string;
+  resultRevision: number;
+  savedAt: Date;
+  versionCreated: boolean;
+}): SaveDocumentContentResult {
+  return {
+    documentId: receipt.documentId,
+    revision: receipt.resultRevision,
+    savedAt: receipt.savedAt.toISOString(),
+    versionCreated: receipt.versionCreated,
+  };
 }
 
 function folderDto(folder: {

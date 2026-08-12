@@ -10,6 +10,8 @@ import {
   FolderSchema,
   type FolderTree,
   FolderTreeSchema,
+  type SaveDocumentContentResult,
+  SaveDocumentContentResultSchema,
 } from "@markora/contracts";
 
 export class WorkspaceApiError extends Error {
@@ -17,6 +19,7 @@ export class WorkspaceApiError extends Error {
     public readonly code: string,
     message: string,
     public readonly requestId?: string,
+    public readonly details?: Record<string, unknown>,
   ) {
     super(message);
     this.name = "WorkspaceApiError";
@@ -36,6 +39,7 @@ async function request(path: string, init?: RequestInit): Promise<unknown> {
       parsed.success ? parsed.data.error.code : "UNKNOWN",
       parsed.success ? parsed.data.error.message : "The request could not be completed.",
       parsed.success ? parsed.data.error.requestId : undefined,
+      parsed.success ? parsed.data.error.details : undefined,
     );
   }
   return body;
@@ -94,6 +98,23 @@ export async function updateDocument(
 ): Promise<DocumentDetail> {
   return DocumentDetailSchema.parse(
     await request(`/documents/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
+  );
+}
+
+export async function saveDocumentContent(
+  id: string,
+  input: {
+    markdown: string;
+    baseRevision: number;
+    clientMutationId: string;
+    conflictResolution?: "OVERWRITE_SERVER";
+  },
+): Promise<SaveDocumentContentResult> {
+  return SaveDocumentContentResultSchema.parse(
+    await request(`/documents/${id}/content`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }),
   );
 }
 

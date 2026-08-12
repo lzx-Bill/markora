@@ -1,0 +1,10 @@
+{
+  "id": "EDIT-008",
+  "status": "passed",
+  "automated": [
+    "apps/web/src/MarkdownEditor.test.tsx > reports initialization failure without emitting changed Markdown"
+  ],
+  "browser": "The implemented failure path switches to Source and reports that Markdown is unchanged.",
+  "environment": "jsdom and Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

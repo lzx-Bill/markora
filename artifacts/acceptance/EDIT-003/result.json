@@ -1,0 +1,12 @@
+{
+  "id": "EDIT-003",
+  "status": "passed",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts > returns a useful revision conflict without overwriting server Markdown",
+    "apps/api/integration/content.integration.spec.ts > protects conflict overwrite with a version snapshot and rejects cross-workspace saves"
+  ],
+  "browser": "Produced an authentic stale-revision conflict, reviewed both copies, retained/downloaded local Markdown, then overwrote with an immutable server snapshot.",
+  "artifacts": ["output/playwright/phase3-revision-conflict-review.png"],
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

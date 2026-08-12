@@ -31,6 +31,7 @@ describe("empty-to-current migration", () => {
     expect(result.rows.map((row) => row.migration_name)).toContain(
       "20260812000310_phase_2_tenant_constraints",
     );
+    expect(result.rows.map((row) => row.migration_name)).toContain("20260812000400_phase_3_editor");
   });
 
   it("supports a transaction without leaving test data", async () => {

@@ -31,7 +31,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
       (request as Request & { requestId?: string }).requestId ??
       request.header("x-request-id") ??
       `req_${randomUUID()}`;
-    const status = exception instanceof HttpException ? exception.getStatus() : 500;
+    const status = this.statusOf(exception);
     const code =
       exception instanceof CodedHttpException
         ? exception.code
@@ -52,6 +52,16 @@ export class ApiExceptionFilter implements ExceptionFilter {
           exception instanceof CodedHttpException ? exception.details : undefined,
         ),
       );
+  }
+
+  private statusOf(exception: unknown): number {
+    if (exception instanceof HttpException) return exception.getStatus();
+    if (exception && typeof exception === "object") {
+      const candidate = exception as { status?: unknown; statusCode?: unknown };
+      const status = candidate.status ?? candidate.statusCode;
+      if (typeof status === "number" && status >= 400 && status < 600) return status;
+    }
+    return 500;
   }
 
   private safeMessage(exception: unknown): string {

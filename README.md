@@ -5,10 +5,10 @@ the frozen V1 specification in [`markora-spec`](./markora-spec/README.md).
 
 ## Current status
 
-Phase 2 folder/document vertical slice: workspace-scoped hierarchy and Markdown records, stable-ID
-document routes, normalized naming constraints, create/open/rename/move/trash and itemized bulk
-operations, optimistic UI rollback, and real PostgreSQL isolation/performance tests. Phase 1
-identity/session protections remain enforced across every content route.
+Phase 3 editor vertical slice: sanitized GFM/math/Mermaid rendering, Source/WYSIWYG/desktop Split,
+raw-block preservation, revision-guarded idempotent saves, protected conflict overwrite, versioned
+IndexedDB drafts, offline continuation and Review/Restore/Discard recovery. Phase 1 identity and
+Phase 2 workspace/content isolation remain enforced across every content route.
 
 ## Repository map
 

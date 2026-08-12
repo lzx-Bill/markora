@@ -16,6 +16,8 @@ import {
   DocumentListSchema,
   FolderSchema,
   FolderTreeSchema,
+  SaveDocumentContentRequestSchema,
+  SaveDocumentContentResultSchema,
   TrashResultSchema,
   UpdateDocumentRequestSchema,
   UpdateFolderRequestSchema,
@@ -39,6 +41,12 @@ const createFolderSchema = z.toJSONSchema(CreateFolderRequestSchema, { target: "
 const updateFolderSchema = z.toJSONSchema(UpdateFolderRequestSchema, { target: "draft-7" });
 const documentListSchema = z.toJSONSchema(DocumentListSchema, { target: "draft-7" });
 const documentDetailSchema = z.toJSONSchema(DocumentDetailSchema, { target: "draft-7" });
+const saveDocumentContentSchema = z.toJSONSchema(SaveDocumentContentRequestSchema, {
+  target: "draft-7",
+});
+const saveDocumentContentResultSchema = z.toJSONSchema(SaveDocumentContentResultSchema, {
+  target: "draft-7",
+});
 const createDocumentSchema = z.toJSONSchema(CreateDocumentRequestSchema, { target: "draft-7" });
 const updateDocumentSchema = z.toJSONSchema(UpdateDocumentRequestSchema, { target: "draft-7" });
 const bulkDocumentSchema = z.toJSONSchema(BulkDocumentRequestSchema, { target: "draft-7" });
@@ -178,6 +186,22 @@ export const openApiDocument = {
         parameters: [uuidPathParameter],
         responses: {
           "201": jsonResponse("Document hidden from active navigation.", trashResultSchema),
+        },
+      },
+    },
+    "/documents/{id}/content": {
+      put: {
+        operationId: "saveDocumentContent",
+        parameters: [uuidPathParameter],
+        requestBody: jsonBody(saveDocumentContentSchema),
+        responses: {
+          "200": jsonResponse(
+            "Revision-guarded Markdown save acknowledged by the server.",
+            saveDocumentContentResultSchema,
+          ),
+          "404": jsonResponse("Document absent from this workspace.", errorSchema),
+          "409": jsonResponse("Base revision is stale; server content is unchanged.", errorSchema),
+          "413": jsonResponse("Markdown exceeds the configured size limit.", errorSchema),
         },
       },
     },

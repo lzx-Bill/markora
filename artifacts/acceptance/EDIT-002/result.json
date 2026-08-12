@@ -1,0 +1,10 @@
+{
+  "id": "EDIT-002",
+  "status": "passed",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts > commits a current revision exactly once and replays the same mutation idempotently"
+  ],
+  "browser": "Actual Source and WYSIWYG edits reached Saved with one new server revision; mode-only changes did not save.",
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

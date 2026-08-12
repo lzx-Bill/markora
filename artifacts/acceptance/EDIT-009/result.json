@@ -1,0 +1,11 @@
+{
+  "id": "EDIT-009",
+  "status": "passed",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts > does not increment revision for an unchanged save and flags large documents"
+  ],
+  "browser": "Opened a 50,100-line document; only virtualized Source was enabled and visual/live Split were disabled with an explicit safety notice.",
+  "artifacts": ["output/playwright/phase3-large-document-mode.png"],
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

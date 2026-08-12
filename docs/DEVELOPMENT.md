@@ -70,13 +70,23 @@ pnpm test:integration
 `pnpm verify` covers formatting/lint, type checking, unit/component tests, OpenAPI drift, Prisma
 schema validation and production builds. Integration tests always target real PostgreSQL.
 
-## Phase 2 content limits
+## Content and editor limits
 
 `WORKSPACE_MAX_DEPTH`, `WORKSPACE_NAME_MAX_CODE_POINTS`, and `DOCUMENT_MAX_BYTES` are typed startup
-configuration. Folder and document mutations use stable IDs and are always scoped from the
+configuration. `DOCUMENT_LARGE_BYTES`, `DOCUMENT_LARGE_LINES`, and
+`VERSION_SNAPSHOT_INTERVAL_MINUTES` control the Phase 3 safety mode and routine immutable version
+snapshots. Folder and document mutations use stable IDs and are always scoped from the
 authenticated principal; callers never provide a workspace ID. The Web route
 `/documents/<document-id>` therefore survives folder and ancestor rename/move operations.
 
-The current source surface is intentionally read-only until Phase 3 adds revision-guarded editing.
-Small explicit document selections can be downloaded locally; durable folder/workspace export and
-background packaging remain Phase 6 work.
+Source uses CodeMirror; WYSIWYG uses Milkdown Crepe; desktop Split renders a sanitized unified
+pipeline. Raw HTML, frontmatter and unknown directives are masked while the visual editor is open
+and restored byte-for-byte. External images are blocked rather than fetched. Saves include
+`baseRevision` and a unique mutation ID; a stale revision returns `409 REVISION_CONFLICT` and never
+overwrites the server copy.
+
+Unsynced Markdown is written first to the versioned `markora-emergency-drafts` IndexedDB database.
+Only a matching server acknowledgement removes it. Reloading with a divergent draft offers
+Review/Restore/Discard; already-open documents remain editable offline, while tree/search and other
+documents are explicitly not advertised as available. Small explicit selections can be downloaded
+locally; durable folder/workspace export remains Phase 6 work.

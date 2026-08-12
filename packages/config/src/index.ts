@@ -20,6 +20,9 @@ export const ServerConfigSchema = z.object({
   WORKSPACE_MAX_DEPTH: z.coerce.number().int().min(1).max(128).default(32),
   WORKSPACE_NAME_MAX_CODE_POINTS: z.coerce.number().int().min(32).max(255).default(255),
   DOCUMENT_MAX_BYTES: z.coerce.number().int().min(1024).default(5_242_880),
+  DOCUMENT_LARGE_BYTES: z.coerce.number().int().min(1024).default(1_048_576),
+  DOCUMENT_LARGE_LINES: z.coerce.number().int().min(1000).default(50_000),
+  VERSION_SNAPSHOT_INTERVAL_MINUTES: z.coerce.number().int().min(1).max(1440).default(10),
 });
 
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;

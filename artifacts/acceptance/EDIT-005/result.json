@@ -1,0 +1,11 @@
+{
+  "id": "EDIT-005",
+  "status": "passed",
+  "automated": [
+    "packages/markdown/src/index.test.ts > restores raw HTML, frontmatter and unknown directives byte-identically around edits",
+    "packages/markdown/src/index.test.ts > fails closed if a raw block sentinel disappears"
+  ],
+  "browser": "After a real unrelated WYSIWYG edit and conflict recovery, Source retained the raw unsafe fixture exactly.",
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

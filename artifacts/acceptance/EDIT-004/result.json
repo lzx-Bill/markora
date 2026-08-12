@@ -1,0 +1,11 @@
+{
+  "id": "EDIT-004",
+  "status": "passed",
+  "automated": [
+    "packages/markdown/src/index.test.ts > renders GFM and math while hardening external content"
+  ],
+  "browser": "Performed a real unrelated Milkdown edit; headings, GFM table/tasks, code, Mermaid, math and Unicode remained semantically rendered in Split.",
+  "artifacts": ["output/playwright/phase3-desktop-split-safe-render.png"],
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

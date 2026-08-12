@@ -1,0 +1,11 @@
+{
+  "id": "DRAFT-003",
+  "status": "passed",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts > returns a useful revision conflict without overwriting server Markdown"
+  ],
+  "browser": "Forced Chromium offline, edited the already-open Source document, observed Offline local-draft state, then reconnected through revision-checked recovery.",
+  "artifacts": ["output/playwright/phase3-offline-draft-safe.png"],
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

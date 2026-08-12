@@ -38,6 +38,9 @@ Object.assign(process.env, {
   WORKSPACE_MAX_DEPTH: "32",
   WORKSPACE_NAME_MAX_CODE_POINTS: "255",
   DOCUMENT_MAX_BYTES: "5242880",
+  DOCUMENT_LARGE_BYTES: "1024",
+  DOCUMENT_LARGE_LINES: "50000",
+  VERSION_SNAPSHOT_INTERVAL_MINUTES: "10",
   BOOTSTRAP_ADMIN_USERNAME: "admin",
   BOOTSTRAP_ADMIN_EMAIL: "admin@example.com",
   BOOTSTRAP_ADMIN_DISPLAY_NAME: "Administrator",
@@ -263,6 +266,125 @@ describe("Phase 2 folder and document vertical slice", () => {
   }, 10_000);
 });
 
+describe("Phase 3 revision-guarded document editing", () => {
+  it("commits a current revision exactly once and replays the same mutation idempotently", async () => {
+    const { agent } = await authenticatedWorkspace();
+    const document = await createDocument(agent, null, "Editor.md", "# Before\n");
+    const clientMutationId = randomUUID();
+    const body = { markdown: "# After\n", baseRevision: 1, clientMutationId };
+
+    const saved = await agent
+      .put(`/api/v1/documents/${document.id}/content`)
+      .set("Origin", origin)
+      .send(body)
+      .expect(200);
+    expect(saved.body).toMatchObject({
+      documentId: document.id,
+      revision: 2,
+      versionCreated: true,
+    });
+
+    const replay = await agent
+      .put(`/api/v1/documents/${document.id}/content`)
+      .set("Origin", origin)
+      .send(body)
+      .expect(200);
+    expect(replay.body).toEqual(saved.body);
+    expect(await database.document.findUniqueOrThrow({ where: { id: document.id } })).toMatchObject(
+      {
+        markdown: "# After\n",
+        revision: 2,
+      },
+    );
+    expect(await database.documentVersion.count({ where: { documentId: document.id } })).toBe(1);
+    expect(await database.documentSaveReceipt.count({ where: { documentId: document.id } })).toBe(
+      1,
+    );
+    expect(JSON.stringify(await database.auditEvent.findMany())).not.toContain("# After");
+  });
+
+  it("returns a useful revision conflict without overwriting server Markdown", async () => {
+    const { agent } = await authenticatedWorkspace();
+    const document = await createDocument(agent, null, "Conflict.md", "server one");
+    await agent
+      .put(`/api/v1/documents/${document.id}/content`)
+      .set("Origin", origin)
+      .send({ markdown: "server two", baseRevision: 1, clientMutationId: randomUUID() })
+      .expect(200);
+
+    const stale = await agent
+      .put(`/api/v1/documents/${document.id}/content`)
+      .set("Origin", origin)
+      .send({ markdown: "local stale", baseRevision: 1, clientMutationId: randomUUID() })
+      .expect(409);
+    expect(stale.body.error).toMatchObject({
+      code: "REVISION_CONFLICT",
+      details: { documentId: document.id, serverRevision: 2, serverMarkdown: "server two" },
+    });
+    expect(await database.document.findUniqueOrThrow({ where: { id: document.id } })).toMatchObject(
+      {
+        markdown: "server two",
+        revision: 2,
+      },
+    );
+  });
+
+  it("protects conflict overwrite with a version snapshot and rejects cross-workspace saves", async () => {
+    const { agent } = await authenticatedWorkspace();
+    const document = await createDocument(agent, null, "Resolution.md", "server current");
+    const resolved = await agent
+      .put(`/api/v1/documents/${document.id}/content`)
+      .set("Origin", origin)
+      .send({
+        markdown: "explicit local current",
+        baseRevision: 1,
+        clientMutationId: randomUUID(),
+        conflictResolution: "OVERWRITE_SERVER",
+      })
+      .expect(200);
+    expect(resolved.body).toMatchObject({ revision: 2, versionCreated: true });
+    expect(
+      await database.documentVersion.findFirstOrThrow({ where: { documentId: document.id } }),
+    ).toMatchObject({
+      markdown: "server current",
+      sourceRevision: 1,
+      reason: "CONFLICT_OVERWRITE",
+    });
+
+    const other = await createOtherWorkspace();
+    const foreign = await database.document.create({
+      data: { workspaceId: other.workspaceId, ...naming.validate("Foreign-save.md", "document") },
+    });
+    await agent
+      .put(`/api/v1/documents/${foreign.id}/content`)
+      .set("Origin", origin)
+      .send({ markdown: "stolen", baseRevision: 1, clientMutationId: randomUUID() })
+      .expect(404);
+    expect(
+      (await database.document.findUniqueOrThrow({ where: { id: foreign.id } })).markdown,
+    ).toBe("");
+  });
+
+  it("does not increment revision for an unchanged save and flags large documents", async () => {
+    const { agent } = await authenticatedWorkspace();
+    const markdown = "x".repeat(120_000);
+    const document = await createDocument(agent, null, "Large.md", markdown);
+    expect(document.capabilities).toEqual({
+      source: true,
+      wysiwyg: false,
+      split: false,
+      largeDocument: true,
+    });
+    const noChange = await agent
+      .put(`/api/v1/documents/${document.id}/content`)
+      .set("Origin", origin)
+      .send({ markdown, baseRevision: 1, clientMutationId: randomUUID() })
+      .expect(200);
+    expect(noChange.body).toMatchObject({ revision: 1, versionCreated: false });
+    expect(await database.documentVersion.count({ where: { documentId: document.id } })).toBe(0);
+  });
+});
+
 async function authenticatedWorkspace() {
   const created = await bootstrapAdmin(database, process.env);
   const agent = supertest.agent(app.getHttpServer());
@@ -296,7 +418,13 @@ async function createDocument(
       .set("Origin", origin)
       .send({ folderId, name, markdown })
       .expect(201)
-  ).body as { id: string; folderId: string | null; name: string; updatedAt: string };
+  ).body as {
+    id: string;
+    folderId: string | null;
+    name: string;
+    updatedAt: string;
+    capabilities: { source: boolean; wysiwyg: boolean; split: boolean; largeDocument: boolean };
+  };
 }
 
 async function createOtherWorkspace() {

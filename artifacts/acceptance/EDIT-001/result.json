@@ -1,0 +1,9 @@
+{
+  "id": "EDIT-001",
+  "status": "passed",
+  "automated": ["apps/web/src/DocumentWorkspace.tsx mode persistence and responsive split guard"],
+  "browser": "Opened the same document in WYSIWYG, Source and desktop Split; the stored mode survived reload and Split was disabled below desktop width.",
+  "artifacts": ["output/playwright/phase3-desktop-split-safe-render.png"],
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

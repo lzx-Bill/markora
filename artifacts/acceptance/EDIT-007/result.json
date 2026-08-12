@@ -1,0 +1,11 @@
+{
+  "id": "EDIT-007",
+  "status": "passed",
+  "automated": [
+    "packages/markdown/src/index.test.ts > isolates invalid math without dropping surrounding content"
+  ],
+  "browser": "Invalid math and Mermaid each showed an isolated alert plus Edit source while surrounding paragraphs stayed usable.",
+  "artifacts": ["output/playwright/phase3-isolated-block-failures.png"],
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:55:00+08:00"
+}

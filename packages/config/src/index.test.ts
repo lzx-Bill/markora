@@ -16,6 +16,9 @@ describe("loadServerConfig", () => {
     expect(config.SESSION_TTL_DAYS).toBe(30);
     expect(config.WORKSPACE_MAX_DEPTH).toBe(32);
     expect(config.DOCUMENT_MAX_BYTES).toBe(5_242_880);
+    expect(config.DOCUMENT_LARGE_BYTES).toBe(1_048_576);
+    expect(config.DOCUMENT_LARGE_LINES).toBe(50_000);
+    expect(config.VERSION_SNAPSHOT_INTERVAL_MINUTES).toBe(10);
   });
 
   it("fails fast without required secrets", () => {
