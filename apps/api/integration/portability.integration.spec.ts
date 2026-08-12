@@ -19,6 +19,7 @@ import supertest from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { DatabaseService as WorkerDatabaseService } from "../../worker/src/database.service.js";
 import { ImportExportRunner } from "../../worker/src/import-export.runner.js";
+import { RuntimeConfigService as WorkerRuntimeConfigService } from "../../worker/src/runtime-config.service.js";
 import { PasswordService } from "../src/auth/password.service.js";
 import { bootstrapAdmin } from "../src/bootstrap-admin.js";
 import { createApplication } from "../src/create-app.js";
@@ -60,7 +61,9 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await rm(temporaryRoot, { recursive: true, force: true });
-  await database.auditEvent.deleteMany();
+  await database.$executeRaw`TRUNCATE TABLE "audit_events"`;
+  await database.systemConfig.deleteMany();
+  await database.serviceHeartbeat.deleteMany();
   await database.loginAttempt.deleteMany();
   await database.session.deleteMany();
   await database.workspace.deleteMany();
@@ -240,6 +243,12 @@ describe("Phase 6 portability API", () => {
       .expect(202);
     await drainWorker();
     expect(await archiveMarkdownPaths(selectionExport.body.job.id)).toEqual(["A_Folder/N_ote.md"]);
+    expect(
+      await database.auditEvent.findMany({
+        where: { action: { startsWith: "export." } },
+        select: { action: true },
+      }),
+    ).toEqual(expect.arrayContaining([{ action: "export.create" }, { action: "export.download" }]));
   });
 
   it("retries only failed import items and allows only valid cancellation states", async () => {
@@ -296,6 +305,12 @@ describe("Phase 6 portability API", () => {
       state: BackgroundJobState.CANCELLED,
       cancellationRequested: true,
     });
+    expect(
+      await database.auditEvent.findMany({
+        where: { action: { startsWith: "job." } },
+        select: { action: true },
+      }),
+    ).toEqual(expect.arrayContaining([{ action: "job.retry-failed" }, { action: "job.cancel" }]));
   });
 });
 
@@ -340,7 +355,11 @@ async function authenticatedOtherWorkspace() {
 }
 
 async function drainWorker() {
-  const runner = new ImportExportRunner({ client: database } as WorkerDatabaseService);
+  const workerDatabase = { client: database } as WorkerDatabaseService;
+  const runner = new ImportExportRunner(
+    workerDatabase,
+    new WorkerRuntimeConfigService(workerDatabase),
+  );
   for (let attempt = 0; attempt < 20; attempt += 1) {
     if (!(await runner.runOnce())) break;
   }

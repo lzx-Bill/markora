@@ -30,6 +30,7 @@ import {
 import { Inject, Injectable } from "@nestjs/common";
 import { DatabaseService } from "../database/database.service.js";
 import { CodedHttpException } from "../http/coded-http.exception.js";
+import { RuntimeConfigService } from "../runtime-config/runtime-config.service.js";
 import { ContentRepository, visibleFolders } from "./content.repository.js";
 
 @Injectable()
@@ -39,6 +40,9 @@ export class ContentService {
 
   @Inject(ContentRepository)
   private readonly repository!: ContentRepository;
+
+  @Inject(RuntimeConfigService)
+  private readonly runtimeConfig!: RuntimeConfigService;
 
   private readonly config = loadServerConfig(process.env);
   private readonly names = new NamingPolicy({
@@ -261,7 +265,8 @@ export class ContentService {
     requestId: string,
   ): Promise<DocumentDetail> {
     const name = this.validateName(input.name, "document");
-    if (Buffer.byteLength(input.markdown, "utf8") > this.config.DOCUMENT_MAX_BYTES) {
+    const { documentMaxBytes } = await this.runtimeConfig.values();
+    if (Buffer.byteLength(input.markdown, "utf8") > documentMaxBytes) {
       throw new CodedHttpException("LIMIT_EXCEEDED", "The Markdown document is too large.", 413);
     }
     try {
@@ -373,7 +378,8 @@ export class ContentService {
     input: SaveDocumentContentRequest,
     requestId: string,
   ): Promise<SaveDocumentContentResult> {
-    if (Buffer.byteLength(input.markdown, "utf8") > this.config.DOCUMENT_MAX_BYTES) {
+    const { documentMaxBytes } = await this.runtimeConfig.values();
+    if (Buffer.byteLength(input.markdown, "utf8") > documentMaxBytes) {
       throw new CodedHttpException("LIMIT_EXCEEDED", "The Markdown document is too large.", 413);
     }
     const markdownHash = createHash("sha256").update(input.markdown).digest("hex");

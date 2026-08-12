@@ -2,6 +2,7 @@ import type { Principal, SessionSummary } from "@markora/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { AdminPage } from "./AdminPage.js";
 import {
   changePassword,
   getCurrentPrincipal,
@@ -13,8 +14,9 @@ import {
 } from "./auth-api.js";
 import { GlobalCommandCenter } from "./GlobalCommandCenter.js";
 import { SearchPage } from "./SearchPage.js";
+import { PreferenceRuntime, SettingsPage } from "./SettingsPage.js";
 import { TrashPage } from "./TrashPage.js";
-import { GlobalRail, WorkspacePage } from "./WorkspacePage.js";
+import { WorkspacePage } from "./WorkspacePage.js";
 
 export function App() {
   return (
@@ -75,6 +77,7 @@ function AuthGate() {
   };
   return (
     <>
+      <PreferenceRuntime />
       <Routes>
         <Route
           path="/trash"
@@ -93,28 +96,23 @@ function AuthGate() {
           element={<WorkspacePage principal={principalQuery.data} onLogout={onLogout} />}
         />
         <Route
-          path="/settings/sessions"
-          element={<SettingsShell principal={principalQuery.data} onLogout={onLogout} />}
+          path="/settings/:category"
+          element={
+            <SettingsPage
+              principal={principalQuery.data}
+              onLogout={onLogout}
+              sessions={<SessionSettings />}
+            />
+          }
+        />
+        <Route
+          path="/admin/:section"
+          element={<AdminPage principal={principalQuery.data} onLogout={onLogout} />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <GlobalCommandCenter principal={principalQuery.data} />
     </>
-  );
-}
-
-function SettingsShell({
-  principal,
-  onLogout,
-}: {
-  readonly principal: Principal;
-  readonly onLogout: () => void | Promise<void>;
-}) {
-  return (
-    <div className="app-shell settings-layout">
-      <GlobalRail principal={principal} onLogout={onLogout} current="settings" />
-      <SessionSettings />
-    </div>
   );
 }
 
@@ -265,7 +263,7 @@ function ChangePasswordPage({
   );
 }
 
-function SessionSettings() {
+export function SessionSettings() {
   const queryClient = useQueryClient();
   const sessionsQuery = useQuery({ queryKey: ["sessions"], queryFn: listSessions });
   const revokeMutation = useMutation({

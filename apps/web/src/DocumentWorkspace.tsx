@@ -11,6 +11,7 @@ import {
   writeEmergencyDraft,
 } from "./draft-storage.js";
 import { type EditorMode, MarkdownPreview, SourceEditor, WysiwygEditor } from "./MarkdownEditor.js";
+import { readPreferenceSettings } from "./preferences.js";
 import { buildVersionDiffRows } from "./version-diff.js";
 import {
   downloadDocumentSource,
@@ -58,6 +59,7 @@ export function DocumentWorkspace({
   const [editorGeneration, setEditorGeneration] = useState(0);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const preferences = readPreferenceSettings();
   const queryClient = useQueryClient();
   const markdownRef = useRef(markdown);
   const revisionRef = useRef(baseRevision);
@@ -219,7 +221,7 @@ export function DocumentWorkspace({
   );
 
   useEffect(() => {
-    if (!dirty || conflict || savingSnapshot !== null) return;
+    if (preferences.autoSave === false || !dirty || conflict || savingSnapshot !== null) return;
     if (!online) {
       setStatus("offline");
       return;
@@ -228,7 +230,7 @@ export function DocumentWorkspace({
       void saveSnapshot(markdownRef.current);
     }, DEFAULT_AUTOSAVE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [conflict, dirty, online, saveSnapshot, savingSnapshot]);
+  }, [conflict, dirty, online, preferences.autoSave, saveSnapshot, savingSnapshot]);
 
   function edit(next: string) {
     setMarkdown(next);
@@ -366,6 +368,9 @@ export function DocumentWorkspace({
               key={`${document.id}:source:${editorGeneration}`}
               initialMarkdown={markdown}
               onChange={edit}
+              wrap={preferences.wrap ?? true}
+              tabSize={preferences.tabSize ?? 2}
+              lineNumbers={preferences.sourceLineNumbers ?? true}
             />
           ) : null}
           {mode === "wysiwyg" ? (
@@ -382,12 +387,22 @@ export function DocumentWorkspace({
                 key={`${document.id}:split:${editorGeneration}`}
                 initialMarkdown={markdown}
                 onChange={edit}
+                wrap={preferences.wrap ?? true}
+                tabSize={preferences.tabSize ?? 2}
+                lineNumbers={preferences.sourceLineNumbers ?? true}
               />
-              <MarkdownPreview markdown={markdown} onEditSource={() => changeMode("source")} />
+              <MarkdownPreview
+                markdown={markdown}
+                onEditSource={() => changeMode("source")}
+                renderMermaid={preferences.mermaid ?? true}
+                renderMath={preferences.math ?? true}
+                externalImages={preferences.externalImages ?? false}
+                linkTarget={preferences.linkTarget ?? "NEW_TAB"}
+              />
             </div>
           ) : null}
         </div>
-        {outline.length > 0 ? (
+        {preferences.outline !== false && outline.length > 0 ? (
           <aside className="document-outline" aria-label="Document outline">
             <strong>Outline</strong>
             <ol>
@@ -760,7 +775,12 @@ function readMode(document: DocumentDetail): EditorMode {
   if (document.capabilities.largeDocument) return "source";
   const stored = localStorage.getItem("markora.editor.mode");
   if (stored === "split" && !window.matchMedia("(min-width: 1280px)").matches) return "source";
-  return stored === "source" || stored === "split" || stored === "wysiwyg" ? stored : "wysiwyg";
+  if (stored === "source" || stored === "split" || stored === "wysiwyg") return stored;
+  const preferred = readPreferenceSettings().defaultEditorMode;
+  if (preferred === "split" && !window.matchMedia("(min-width: 1280px)").matches) return "source";
+  return preferred === "source" || preferred === "split" || preferred === "wysiwyg"
+    ? preferred
+    : "wysiwyg";
 }
 
 function scrollToHeading(text: string) {

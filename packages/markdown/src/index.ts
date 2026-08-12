@@ -97,35 +97,46 @@ type HastNode = {
   children?: HastNode[];
 };
 
-const renderer = unified()
-  .use(remarkParse)
-  .use(remarkGfm)
-  .use(remarkMath)
-  .use(remarkRehype, { allowDangerousHtml: true })
-  .use(rehypeRaw)
-  .use(rehypeSanitize, sanitizerSchema)
-  .use(rehypeKatex, katexOptions)
-  .use(() => (tree: HastNode) => hardenExternalContent(tree))
-  .use(rehypeStringify);
-
-export function renderMarkdown(markdown: string): string {
-  return String(renderer.processSync(markdown));
+export interface MarkdownRenderOptions {
+  readonly externalImages?: boolean;
+  readonly linkTarget?: "SAME_TAB" | "NEW_TAB";
+  readonly math?: boolean;
 }
 
-function hardenExternalContent(node: HastNode): void {
+export function renderMarkdown(markdown: string, options: MarkdownRenderOptions = {}): string {
+  const parsed = unified().use(remarkParse).use(remarkGfm);
+  if (options.math !== false) parsed.use(remarkMath);
+  const html = parsed
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
+    .use(rehypeSanitize, sanitizerSchema);
+  if (options.math !== false) html.use(rehypeKatex, katexOptions);
+  return String(
+    html
+      .use(() => (tree: HastNode) => hardenExternalContent(tree, options))
+      .use(rehypeStringify)
+      .processSync(markdown),
+  );
+}
+
+function hardenExternalContent(node: HastNode, options: MarkdownRenderOptions): void {
   if (node.type === "element" && node.tagName === "a") {
     node.properties = { ...node.properties, rel: ["nofollow", "noopener", "noreferrer"] };
     if (typeof node.properties.href === "string" && /^https?:/i.test(node.properties.href)) {
-      node.properties.target = "_blank";
+      if (options.linkTarget !== "SAME_TAB") node.properties.target = "_blank";
+      else delete node.properties.target;
     }
   }
-  if (node.type === "element" && node.tagName === "img") {
+  if (node.type === "element" && node.tagName === "img" && options.externalImages !== true) {
     const alt = typeof node.properties?.alt === "string" ? node.properties.alt : "image";
     node.tagName = "span";
     node.properties = { className: ["external-image-placeholder"] };
     node.children = [{ type: "text", value: `External image blocked: ${alt}` } as HastNode];
   }
-  for (const child of node.children ?? []) hardenExternalContent(child);
+  if (node.type === "element" && node.tagName === "img" && options.externalImages === true) {
+    node.properties = { ...node.properties, loading: "lazy", referrerPolicy: "no-referrer" };
+  }
+  for (const child of node.children ?? []) hardenExternalContent(child, options);
 }
 
 export interface MarkdownOutlineItem {

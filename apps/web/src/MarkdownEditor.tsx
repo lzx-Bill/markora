@@ -19,9 +19,15 @@ export type EditorMode = "wysiwyg" | "source" | "split";
 export function SourceEditor({
   initialMarkdown,
   onChange,
+  wrap = true,
+  tabSize = 2,
+  lineNumbers = true,
 }: {
   readonly initialMarkdown: string;
   readonly onChange: (markdown: string) => void;
+  readonly wrap?: boolean;
+  readonly tabSize?: 2 | 4;
+  readonly lineNumbers?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const initialRef = useRef(initialMarkdown);
@@ -37,7 +43,8 @@ export function SourceEditor({
       extensions: [
         basicSetup,
         markdownLanguage(),
-        EditorView.lineWrapping,
+        ...(wrap ? [EditorView.lineWrapping] : []),
+        EditorView.editorAttributes.of({ style: `tab-size: ${tabSize}` }),
         EditorView.contentAttributes.of({
           "aria-label": "Markdown source editor",
           spellcheck: "true",
@@ -48,9 +55,15 @@ export function SourceEditor({
       ],
     });
     return () => view.destroy();
-  }, []);
+  }, [tabSize, wrap]);
 
-  return <div className="source-editor" ref={rootRef} />;
+  return (
+    <div
+      className="source-editor"
+      data-line-numbers={lineNumbers ? "true" : "false"}
+      ref={rootRef}
+    />
+  );
 }
 
 export function WysiwygEditor({
@@ -149,13 +162,22 @@ export function MarkdownPreview({
   markdown,
   onEditSource,
   renderMermaid = true,
+  renderMath = true,
+  externalImages = false,
+  linkTarget = "NEW_TAB",
 }: {
   readonly markdown: string;
   readonly onEditSource: () => void;
   readonly renderMermaid?: boolean;
+  readonly renderMath?: boolean;
+  readonly externalImages?: boolean;
+  readonly linkTarget?: "SAME_TAB" | "NEW_TAB";
 }) {
   const rootRef = useRef<HTMLElement>(null);
-  const html = useMemo(() => renderMarkdown(markdown), [markdown]);
+  const html = useMemo(
+    () => renderMarkdown(markdown, { externalImages, linkTarget, math: renderMath }),
+    [externalImages, linkTarget, markdown, renderMath],
+  );
 
   useEffect(() => {
     const root = rootRef.current;

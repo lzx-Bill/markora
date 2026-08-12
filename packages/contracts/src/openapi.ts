@@ -1,5 +1,22 @@
 import { z } from "zod";
 import {
+  AdminConfigResponseSchema,
+  AdminHealthSchema,
+  AdminJobListSchema,
+  AdminOverviewSchema,
+  AdminSecuritySchema,
+  AdminUserDetailSchema,
+  AdminUserListSchema,
+  AdminUserSummarySchema,
+  AuditEventListSchema,
+  CreateAdminUserRequestSchema,
+  PreferenceResponseSchema,
+  ResetAdminPasswordRequestSchema,
+  UpdateAdminConfigRequestSchema,
+  UpdateAdminUserRequestSchema,
+  UpdatePreferencesRequestSchema,
+} from "./administration.js";
+import {
   ChangePasswordRequestSchema,
   LoginRequestSchema,
   LoginResponseSchema,
@@ -50,6 +67,27 @@ import { QuickOpenResultSchema, SearchResultPageSchema } from "./search.js";
 
 const healthSchema = z.toJSONSchema(HealthResponseSchema, { target: "draft-7" });
 const errorSchema = z.toJSONSchema(ApiErrorSchema, { target: "draft-7" });
+const preferenceResponseSchema = z.toJSONSchema(PreferenceResponseSchema, { target: "draft-7" });
+const updatePreferencesSchema = z.toJSONSchema(UpdatePreferencesRequestSchema, {
+  target: "draft-7",
+});
+const adminOverviewSchema = z.toJSONSchema(AdminOverviewSchema, { target: "draft-7" });
+const adminUserListSchema = z.toJSONSchema(AdminUserListSchema, { target: "draft-7" });
+const adminUserSummarySchema = z.toJSONSchema(AdminUserSummarySchema, { target: "draft-7" });
+const adminUserDetailSchema = z.toJSONSchema(AdminUserDetailSchema, { target: "draft-7" });
+const createAdminUserSchema = z.toJSONSchema(CreateAdminUserRequestSchema, { target: "draft-7" });
+const updateAdminUserSchema = z.toJSONSchema(UpdateAdminUserRequestSchema, { target: "draft-7" });
+const resetAdminPasswordSchema = z.toJSONSchema(ResetAdminPasswordRequestSchema, {
+  target: "draft-7",
+});
+const adminConfigResponseSchema = z.toJSONSchema(AdminConfigResponseSchema, { target: "draft-7" });
+const updateAdminConfigSchema = z.toJSONSchema(UpdateAdminConfigRequestSchema, {
+  target: "draft-7",
+});
+const adminSecuritySchema = z.toJSONSchema(AdminSecuritySchema, { target: "draft-7" });
+const adminJobListSchema = z.toJSONSchema(AdminJobListSchema, { target: "draft-7" });
+const auditEventListSchema = z.toJSONSchema(AuditEventListSchema, { target: "draft-7" });
+const adminHealthSchema = z.toJSONSchema(AdminHealthSchema, { target: "draft-7" });
 const loginRequestSchema = z.toJSONSchema(LoginRequestSchema, { target: "draft-7" });
 const loginResponseSchema = z.toJSONSchema(LoginResponseSchema, { target: "draft-7" });
 const principalSchema = z.toJSONSchema(PrincipalSchema, { target: "draft-7" });
@@ -138,6 +176,148 @@ export const openApiDocument = {
   },
   servers: [{ url: "/api/v1" }],
   paths: {
+    "/preferences": {
+      get: {
+        operationId: "getPreferences",
+        responses: { "200": jsonResponse("Typed user preferences.", preferenceResponseSchema) },
+      },
+      patch: {
+        operationId: "updatePreferences",
+        requestBody: jsonBody(updatePreferencesSchema),
+        responses: {
+          "200": jsonResponse("Preferences saved.", preferenceResponseSchema),
+          "409": jsonResponse("Preference version conflict.", errorSchema),
+        },
+      },
+    },
+    "/admin/overview": {
+      get: {
+        operationId: "getAdminOverview",
+        responses: {
+          "200": jsonResponse("Content-free system overview.", adminOverviewSchema),
+          "403": jsonResponse("Administrator access required.", errorSchema),
+        },
+      },
+    },
+    "/admin/users": {
+      get: {
+        operationId: "listAdminUsers",
+        responses: { "200": jsonResponse("User metadata list.", adminUserListSchema) },
+      },
+      post: {
+        operationId: "createAdminUser",
+        requestBody: jsonBody(createAdminUserSchema),
+        responses: {
+          "201": jsonResponse("User created with forced password change.", adminUserSummarySchema),
+        },
+      },
+    },
+    "/admin/users/{id}": {
+      get: {
+        operationId: "getAdminUser",
+        parameters: [uuidParameter("id")],
+        responses: {
+          "200": jsonResponse("Content-free user detail and counts.", adminUserDetailSchema),
+        },
+      },
+      patch: {
+        operationId: "updateAdminUser",
+        parameters: [uuidParameter("id")],
+        requestBody: jsonBody(updateAdminUserSchema),
+        responses: {
+          "200": jsonResponse("User metadata updated.", adminUserSummarySchema),
+          "409": jsonResponse("Last active administrator protected.", errorSchema),
+        },
+      },
+    },
+    "/admin/users/{id}/reset-password": {
+      post: {
+        operationId: "resetAdminUserPassword",
+        parameters: [uuidParameter("id")],
+        requestBody: jsonBody(resetAdminPasswordSchema),
+        responses: {
+          "201": jsonResponse(
+            "Temporary password applied and sessions revoked.",
+            operationResultSchema,
+          ),
+        },
+      },
+    },
+    "/admin/users/{id}/revoke-sessions": {
+      post: {
+        operationId: "revokeAdminUserSessions",
+        parameters: [uuidParameter("id")],
+        responses: { "201": jsonResponse("User sessions revoked.", operationResultSchema) },
+      },
+    },
+    "/admin/config": {
+      get: {
+        operationId: "getAdminConfig",
+        responses: {
+          "200": jsonResponse("Versioned mutable system settings.", adminConfigResponseSchema),
+        },
+      },
+      put: {
+        operationId: "updateAdminConfig",
+        requestBody: jsonBody(updateAdminConfigSchema),
+        responses: {
+          "200": jsonResponse("Reviewed system settings applied.", adminConfigResponseSchema),
+          "409": jsonResponse("Config version conflict.", errorSchema),
+        },
+      },
+    },
+    "/admin/security": {
+      get: {
+        operationId: "getAdminSecurity",
+        responses: {
+          "200": jsonResponse("Effective immutable security floors.", adminSecuritySchema),
+        },
+      },
+    },
+    "/admin/jobs": {
+      get: {
+        operationId: "listAdminJobs",
+        responses: {
+          "200": jsonResponse("Cross-workspace operational job metadata.", adminJobListSchema),
+        },
+      },
+    },
+    "/admin/jobs/{id}/retry": {
+      post: {
+        operationId: "retryAdminJob",
+        parameters: [uuidParameter("id")],
+        responses: {
+          "201": jsonResponse("Retry job accepted.", acceptedJobSchema),
+          "409": jsonResponse("Job is not retryable.", errorSchema),
+        },
+      },
+    },
+    "/admin/jobs/{id}/cancel": {
+      post: {
+        operationId: "cancelAdminJob",
+        parameters: [uuidParameter("id")],
+        responses: {
+          "201": jsonResponse("Cancellation accepted.", acceptedJobSchema),
+          "409": jsonResponse("Job is not cancellable.", errorSchema),
+        },
+      },
+    },
+    "/admin/audit": {
+      get: {
+        operationId: "listAdminAudit",
+        responses: {
+          "200": jsonResponse("Redacted append-only audit events.", auditEventListSchema),
+        },
+      },
+    },
+    "/admin/health": {
+      get: {
+        operationId: "getAdminHealth",
+        responses: {
+          "200": jsonResponse("API, database, migration and worker status.", adminHealthSchema),
+        },
+      },
+    },
     "/search": {
       get: {
         operationId: "searchDocuments",

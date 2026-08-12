@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { loadServerConfig } from "@markora/config";
 import type { Principal, SessionList } from "@markora/contracts";
 import { AuditResult, UserStatus } from "@markora/database";
 import { canonicalizeIdentity } from "@markora/domain";
 import { Inject, Injectable } from "@nestjs/common";
 import { DatabaseService } from "../database/database.service.js";
 import { CodedHttpException } from "../http/coded-http.exception.js";
+import { RuntimeConfigService } from "../runtime-config/runtime-config.service.js";
 import { AuditService } from "./audit.service.js";
 import { LoginRateLimitService } from "./login-rate-limit.service.js";
 import { PasswordService } from "./password.service.js";
@@ -25,6 +25,7 @@ interface PrincipalSource {
 export interface LoginResult {
   readonly principal: Principal;
   readonly token: string;
+  readonly sessionTtlDays: number;
 }
 
 @Injectable()
@@ -41,7 +42,9 @@ export class AuthService {
   @Inject(AuditService)
   private readonly audit!: AuditService;
 
-  private readonly config = loadServerConfig(process.env);
+  @Inject(RuntimeConfigService)
+  private readonly runtimeConfig!: RuntimeConfigService;
+
   private dummyPasswordHash: Promise<string> | undefined;
 
   public async login(
@@ -91,7 +94,8 @@ export class AuthService {
     }
 
     const token = createOpaqueSessionToken();
-    const expiresAt = new Date(Date.now() + this.config.SESSION_TTL_DAYS * 86_400_000);
+    const { sessionTtlDays } = await this.runtimeConfig.values();
+    const expiresAt = new Date(Date.now() + sessionTtlDays * 86_400_000);
     const [session] = await this.database.client.$transaction([
       this.database.client.session.create({
         data: {
@@ -118,6 +122,7 @@ export class AuthService {
 
     return {
       token,
+      sessionTtlDays,
       principal: principalFrom({
         sessionId: session.id,
         userId: user.id,

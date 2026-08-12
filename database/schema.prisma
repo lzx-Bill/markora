@@ -81,8 +81,43 @@ model User {
   backgroundJobs     BackgroundJob[]
   importUploads      ImportUpload[]      @relation("ImportUploadOwner")
   importPlans        ImportPlan[]        @relation("ImportPlanOwner")
+  preference         UserPreference?
+  systemConfigUpdates SystemConfig[]     @relation("SystemConfigUpdater")
 
   @@map("users")
+}
+
+model UserPreference {
+  userId        String   @id @map("user_id") @db.Uuid
+  schemaVersion Int      @default(1) @map("schema_version")
+  version       Int      @default(1)
+  settings      Json     @default("{}") @map("settings_json") @db.JsonB
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model SystemConfig {
+  key        String   @id
+  typedValue Json     @map("typed_value") @db.JsonB
+  version    Int      @default(1)
+  updatedBy  String   @map("updated_by") @db.Uuid
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updater    User     @relation("SystemConfigUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@map("system_config")
+}
+
+model ServiceHeartbeat {
+  service   String   @id
+  instance  String
+  startedAt DateTime @map("started_at") @db.Timestamptz(3)
+  seenAt    DateTime @map("seen_at") @db.Timestamptz(3)
+  metadata  Json     @default("{}") @map("metadata_json") @db.JsonB
+
+  @@index([seenAt])
+  @@map("service_heartbeats")
 }
 
 model Workspace {

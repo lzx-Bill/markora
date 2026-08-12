@@ -61,7 +61,9 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await database.auditEvent.deleteMany();
+  await database.$executeRaw`TRUNCATE TABLE "audit_events"`;
+  await database.systemConfig.deleteMany();
+  await database.serviceHeartbeat.deleteMany();
   await database.loginAttempt.deleteMany();
   await database.session.deleteMany();
   await database.workspace.deleteMany();
@@ -551,6 +553,18 @@ describe("Phase 4 versions and recovery", () => {
     );
     await agent.get(`/api/v1/jobs/${first.body.job.id}`).expect(200);
     expect(await database.backgroundJob.count({ where: { targetId: document.id } })).toBe(1);
+    expect(
+      await database.auditEvent.findMany({
+        where: { targetId: document.id },
+        select: { action: true, result: true },
+        orderBy: { occurredAt: "asc" },
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        { action: "document.trash", result: "SUCCESS" },
+        { action: "document.delete.request", result: "SUCCESS" },
+      ]),
+    );
 
     await database.backgroundJob.update({
       where: { id: first.body.job.id },

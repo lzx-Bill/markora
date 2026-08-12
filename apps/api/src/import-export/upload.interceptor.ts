@@ -11,14 +11,15 @@ interface UploadRequest extends Request {
 }
 
 const uploadConfig = loadUploadStorageConfig(process.env);
+const runtimeFileCountCeiling = 100_000;
 
-export const ImportFilesInterceptor = FilesInterceptor("files", uploadConfig.IMPORT_MAX_FILES, {
+export const ImportFilesInterceptor = FilesInterceptor("files", runtimeFileCountCeiling, {
   preservePath: true,
   limits: {
-    files: uploadConfig.IMPORT_MAX_FILES,
+    files: runtimeFileCountCeiling,
     fileSize: uploadConfig.IMPORT_UPLOAD_MAX_BYTES,
     fields: 10,
-    parts: uploadConfig.IMPORT_MAX_FILES + 10,
+    parts: runtimeFileCountCeiling + 10,
   },
   storage: diskStorage({
     destination(request: UploadRequest, _file, callback) {

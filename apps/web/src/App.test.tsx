@@ -33,8 +33,22 @@ describe("authenticated workspace navigation", () => {
     );
     expect(screen.getByRole("navigation", { name: "Global navigation" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Documents" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute("href", "/admin/overview");
     expect(screen.queryByText("Favorites")).not.toBeInTheDocument();
     expect(screen.queryByText("Share")).not.toBeInTheDocument();
+  });
+
+  it("does not expose Admin navigation to a regular user", () => {
+    render(
+      <MemoryRouter>
+        <GlobalRail
+          principal={{ ...principal, role: "USER" }}
+          onLogout={() => undefined}
+          current="documents"
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });
 
   it("flattens the folder tree in stable visual order with depth", () => {

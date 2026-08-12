@@ -45,6 +45,9 @@ describe("empty-to-current migration", () => {
     expect(result.rows.map((row) => row.migration_name)).toContain(
       "20260813000700_phase_6_jobs_import_export",
     );
+    expect(result.rows.map((row) => row.migration_name)).toContain(
+      "20260813000800_phase_7_settings_admin_audit",
+    );
   });
 
   it("supports a transaction without leaving test data", async () => {

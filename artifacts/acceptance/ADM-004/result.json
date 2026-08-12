@@ -1,0 +1,14 @@
+{
+  "id": "ADM-004",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/api/integration/administration.integration.spec.ts: full typed config apply, version guard, atomic stale rejection and success/failure audit",
+    "apps/web/src/SettingsAdmin.test.tsx: review dialog precedes explicit apply and cache advances to the returned version",
+    "apps/api/integration/administration.integration.spec.ts: a lower document byte limit and external-image ceiling take effect without restart",
+    "apps/worker/integration/permanent-deletion.integration.spec.ts: changed retention takes effect on the next maintenance pass without restart"
+  ],
+  "browser": "Real Chromium staged a complete configuration, displayed the review dialog, applied it as Version 2 and exposed field explanations.",
+  "evidence": ["output/playwright/phase7-config-review.png"],
+  "verifiedAt": "2026-08-13T01:53:00+08:00"
+}

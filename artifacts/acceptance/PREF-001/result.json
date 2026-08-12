@@ -1,0 +1,12 @@
+{
+  "id": "PREF-001",
+  "status": "passed",
+  "priority": "P2",
+  "automated": [
+    "apps/web/src/SettingsAdmin.test.tsx: typed auto-save, serialized rapid changes, visible status and confirmed-value rollback",
+    "apps/api/integration/administration.integration.spec.ts: partial PATCH merge and optimistic version conflict"
+  ],
+  "browser": "Real Chromium changed Theme and Accent concurrently, observed Saved, reloaded, and retained DARK plus INDIGO with zero console errors.",
+  "evidence": ["output/playwright/phase7-settings-dark.png"],
+  "verifiedAt": "2026-08-13T01:53:00+08:00"
+}

@@ -1,0 +1,11 @@
+{
+  "id": "ADM-005",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/administration.integration.spec.ts: sanitizer, scripts and unsafe URL floors are literal true values",
+    "packages/contracts/src/administration.ts: immutable security schema cannot represent disabled floors"
+  ],
+  "browser": "Security rendered sanitizer, scripts, unsafe URLs, local file URLs and archive traversal as checked disabled controls.",
+  "verifiedAt": "2026-08-13T01:53:00+08:00"
+}

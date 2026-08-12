@@ -19,6 +19,7 @@ import { visibleFolders } from "../content/content.repository.js";
 import { jobDto } from "../content/trash.service.js";
 import { DatabaseService } from "../database/database.service.js";
 import { CodedHttpException } from "../http/coded-http.exception.js";
+import { RuntimeConfigService } from "../runtime-config/runtime-config.service.js";
 import { signExportDownload, verifyExportDownload } from "./export-token.js";
 
 interface SnapshotItem {
@@ -34,6 +35,9 @@ interface SnapshotItem {
 export class ExportService {
   @Inject(DatabaseService)
   private readonly database!: DatabaseService;
+
+  @Inject(RuntimeConfigService)
+  private readonly runtimeConfig!: RuntimeConfigService;
 
   private readonly config = loadServerConfig(process.env);
 
@@ -68,7 +72,8 @@ export class ExportService {
     input: ExportRequest,
     requestId: string,
   ): Promise<CreateExportResult> {
-    const expiresAt = new Date(Date.now() + this.config.EXPORT_DOWNLOAD_TTL_MINUTES * 60_000);
+    const { exportDownloadTtlMinutes } = await this.runtimeConfig.values();
+    const expiresAt = new Date(Date.now() + exportDownloadTtlMinutes * 60_000);
     const job = await this.database.client.$transaction(
       async (transaction) => {
         const existing = await transaction.backgroundJob.findFirst({

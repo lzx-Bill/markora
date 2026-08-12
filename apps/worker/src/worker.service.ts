@@ -6,6 +6,7 @@ import {
   type OnApplicationShutdown,
   type OnModuleInit,
 } from "@nestjs/common";
+import { DatabaseService } from "./database.service.js";
 import { ImportExportRunner } from "./import-export.runner.js";
 import { PermanentDeletionRunner } from "./permanent-deletion.runner.js";
 
@@ -15,8 +16,11 @@ export class WorkerService implements OnModuleInit, OnApplicationShutdown {
   private heartbeat: NodeJS.Timeout | undefined;
   private readonly config = loadServerConfig(process.env);
   private running = false;
+  private readonly instance = `worker-${process.pid}`;
+  private readonly startedAt = new Date();
 
   public constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(PermanentDeletionRunner) private readonly deletion: PermanentDeletionRunner,
     @Inject(ImportExportRunner) private readonly portability: ImportExportRunner,
   ) {}
@@ -35,6 +39,22 @@ export class WorkerService implements OnModuleInit, OnApplicationShutdown {
     if (this.running) return;
     this.running = true;
     try {
+      await this.database.client.serviceHeartbeat.upsert({
+        where: { service: "worker" },
+        create: {
+          service: "worker",
+          instance: this.instance,
+          startedAt: this.startedAt,
+          seenAt: new Date(),
+          metadata: { capabilities: ["deletion", "import", "export"] },
+        },
+        update: {
+          instance: this.instance,
+          startedAt: this.startedAt,
+          seenAt: new Date(),
+          metadata: { capabilities: ["deletion", "import", "export"] },
+        },
+      });
       await this.deletion.runMaintenanceOnce();
       await this.portability.runMaintenanceOnce();
       while (await this.deletion.runOnce()) {

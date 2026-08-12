@@ -38,6 +38,18 @@ describe("safe Markdown renderer", () => {
     expect(html).not.toMatch(/<script|onerror=|href="javascript:|src="file:/i);
   });
 
+  it("applies explicit image, link-target and math preferences without weakening protocols", () => {
+    const html = renderMarkdown(
+      "$E=mc^2$\n\n[site](https://example.com)\n\n![alt](https://example.com/a.png)\n\n![bad](file:///etc/passwd)",
+      { externalImages: true, linkTarget: "SAME_TAB", math: false },
+    );
+    expect(html).toContain('src="https://example.com/a.png"');
+    expect(html).toContain('loading="lazy"');
+    expect(html).not.toContain('target="_blank"');
+    expect(html).not.toContain('class="katex"');
+    expect(html).not.toContain('src="file:');
+  });
+
   it("isolates invalid math without dropping surrounding content", () => {
     const html = renderMarkdown("Before\n\n$\\badcommand{$\n\nAfter");
     expect(html).toContain("Before");

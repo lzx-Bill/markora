@@ -2,6 +2,7 @@ import type { Principal } from "@markora/contracts";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { type FormEvent, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { readPreferenceSettings } from "./preferences.js";
 import { flattenFolders, GlobalRail } from "./WorkspacePage.js";
 import { getFolderTree, searchDocuments } from "./workspace-api.js";
 
@@ -21,10 +22,15 @@ export function SearchPage({
 }) {
   const treeQuery = useQuery({ queryKey: ["folders", "tree"], queryFn: getFolderTree });
   const folders = useMemo(() => flattenFolders(treeQuery.data?.data ?? []), [treeQuery.data]);
+  const preferences = readPreferenceSettings();
   const [query, setQuery] = useState("");
-  const [scope, setScope] = useState<SearchFilters["scope"]>("all");
+  const [scope, setScope] = useState<SearchFilters["scope"]>(
+    preferences.searchScope === "CURRENT_FOLDER" ? "subtree" : "all",
+  );
   const [folderId, setFolderId] = useState("");
-  const [includeCodeBlocks, setIncludeCodeBlocks] = useState(false);
+  const [includeCodeBlocks, setIncludeCodeBlocks] = useState(
+    preferences.includeCodeBlocks ?? false,
+  );
   const [filters, setFilters] = useState<SearchFilters | null>(null);
   const searchQuery = useInfiniteQuery({
     queryKey: ["search", filters],
@@ -50,6 +56,7 @@ export function SearchPage({
       ...(scope === "all" ? {} : { folderId }),
       includeCodeBlocks,
     });
+    rememberSearch(q);
   }
 
   return (
@@ -173,4 +180,17 @@ export function SearchPage({
       </main>
     </div>
   );
+}
+
+function rememberSearch(query: string): void {
+  const key = "markora.search-history.v1";
+  try {
+    const current = JSON.parse(localStorage.getItem(key) ?? "[]") as unknown;
+    const history = Array.isArray(current)
+      ? current.filter((item): item is string => typeof item === "string" && item !== query)
+      : [];
+    localStorage.setItem(key, JSON.stringify([query, ...history].slice(0, 20)));
+  } catch {
+    localStorage.setItem(key, JSON.stringify([query]));
+  }
 }

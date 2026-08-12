@@ -1,0 +1,11 @@
+{
+  "id": "ADM-001",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/administration.integration.spec.ts: regular user receives 403 for every admin route family",
+    "apps/web/src/App.test.tsx: Admin navigation is absent for a regular principal"
+  ],
+  "browser": "An admin-created regular user had zero Admin links and direct /admin/overview navigation redirected to the workspace; console errors were zero.",
+  "verifiedAt": "2026-08-13T01:53:00+08:00"
+}

@@ -169,6 +169,9 @@ importers:
       '@markora/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@markora/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@markora/database':
         specifier: workspace:*
         version: link:../../database

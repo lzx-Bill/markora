@@ -9,7 +9,10 @@ import { requestIdMiddleware } from "./http/request-id.middleware.js";
 export async function createApplication(): Promise<INestApplication> {
   const config = loadServerConfig(process.env);
   const app = await NestFactory.create(AppModule, { bodyParser: false, bufferLogs: true });
-  app.use(json({ limit: config.DOCUMENT_MAX_BYTES * 2 + 65_536 }));
+  const runtimeDocumentCeiling = 52_428_800;
+  app.use(
+    json({ limit: Math.max(config.DOCUMENT_MAX_BYTES, runtimeDocumentCeiling) * 2 + 65_536 }),
+  );
   app.use(requestIdMiddleware);
   app.useGlobalFilters(new ApiExceptionFilter());
   app.setGlobalPrefix("api/v1");

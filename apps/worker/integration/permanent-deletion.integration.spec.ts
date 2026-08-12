@@ -12,6 +12,7 @@ import {
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { DatabaseService } from "../src/database.service.js";
 import { PermanentDeletionRunner } from "../src/permanent-deletion.runner.js";
+import { RuntimeConfigService } from "../src/runtime-config.service.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl?.includes("markora_test")) {
@@ -37,7 +38,9 @@ beforeAll(() => {
 });
 
 beforeEach(async () => {
-  await database.auditEvent.deleteMany();
+  await database.$executeRaw`TRUNCATE TABLE "audit_events"`;
+  await database.systemConfig.deleteMany();
+  await database.serviceHeartbeat.deleteMany();
   await database.loginAttempt.deleteMany();
   await database.session.deleteMany();
   await database.workspace.deleteMany();
@@ -196,6 +199,42 @@ describe("Phase 4 restart-safe permanent deletion", () => {
       },
     });
     const runner = runnerFor(database);
+    await database.systemConfig.create({
+      data: {
+        key: "runtime-v1",
+        updatedBy: userId,
+        typedValue: {
+          documentMaxBytes: 5_242_880,
+          trashRetentionDays: 365,
+          versionRetentionDays: 365,
+          sessionTtlDays: 30,
+          importMaxFiles: 2_000,
+          importMaxTotalBytes: 104_857_600,
+          exportDownloadTtlMinutes: 60,
+          externalImagesEnabled: false,
+        },
+      },
+    });
+    await runner.runMaintenanceOnce();
+    expect(await database.documentVersion.count({ where: { documentId: document.id } })).toBe(2);
+    expect(await database.document.findUniqueOrThrow({ where: { id: expired.id } })).toMatchObject({
+      state: ResourceState.TRASHED,
+    });
+    await database.systemConfig.update({
+      where: { key: "runtime-v1" },
+      data: {
+        typedValue: {
+          documentMaxBytes: 5_242_880,
+          trashRetentionDays: 1,
+          versionRetentionDays: 1,
+          sessionTtlDays: 30,
+          importMaxFiles: 2_000,
+          importMaxTotalBytes: 104_857_600,
+          exportDownloadTtlMinutes: 60,
+          externalImagesEnabled: false,
+        },
+      },
+    });
     await runner.runMaintenanceOnce();
     expect(await database.documentVersion.findMany({ where: { documentId: document.id } })).toEqual(
       [expect.objectContaining({ reason: "RESTORE", markdown: "protected" })],
@@ -213,7 +252,8 @@ describe("Phase 4 restart-safe permanent deletion", () => {
 });
 
 function runnerFor(client: DatabaseClient): PermanentDeletionRunner {
-  return new PermanentDeletionRunner({ client } as DatabaseService);
+  const database = { client } as DatabaseService;
+  return new PermanentDeletionRunner(database, new RuntimeConfigService(database));
 }
 
 async function createOwner() {

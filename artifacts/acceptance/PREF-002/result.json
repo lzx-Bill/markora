@@ -1,0 +1,15 @@
+{
+  "id": "PREF-002",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "packages/contracts/src/administration.test.ts: partial settings never inject unrelated defaults",
+    "apps/web/src/SettingsAdmin.test.tsx: preference application updates runtime theme"
+  ],
+  "browser": "Real Chromium verified theme persistence and every Editor preference remained reachable in an 800 CSS-pixel viewport representing 200% reflow from 1600px.",
+  "evidence": [
+    "output/playwright/phase7-settings-dark.png",
+    "output/playwright/phase7-settings-200-percent.png"
+  ],
+  "verifiedAt": "2026-08-13T01:53:00+08:00"
+}

@@ -14,6 +14,7 @@ import { NamingPolicy } from "@markora/domain";
 import { privatePath, writeMarkdownZip } from "@markora/portability";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { DatabaseService } from "./database.service.js";
+import { RuntimeConfigService } from "./runtime-config.service.js";
 
 class ItemFailure extends Error {
   public constructor(
@@ -36,7 +37,10 @@ export class ImportExportRunner {
     maxCodePoints: this.config.WORKSPACE_NAME_MAX_CODE_POINTS,
   });
 
-  public constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
+  public constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(RuntimeConfigService) private readonly runtimeConfig: RuntimeConfigService,
+  ) {}
 
   public async runOnce(): Promise<boolean> {
     const job = await this.claim();
@@ -480,7 +484,8 @@ export class ImportExportRunner {
         report,
       );
       await rename(temporary, finalPath);
-      const expiresAt = payloadExpiry(job.payload, this.config.EXPORT_DOWNLOAD_TTL_MINUTES);
+      const { exportDownloadTtlMinutes } = await this.runtimeConfig.values();
+      const expiresAt = payloadExpiry(job.payload, exportDownloadTtlMinutes);
       await this.database.client.$transaction(async (transaction) => {
         const authorized = await transaction.backgroundJob.findFirst({
           where: {

@@ -1,0 +1,10 @@
+{
+  "id": "ADM-003",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/administration.integration.spec.ts: last active admin demotion is rejected and role changes are enforced against an existing session"
+  ],
+  "browser": "Admin Users provides confirmed role/status controls and creates users with a forced temporary-password state.",
+  "verifiedAt": "2026-08-13T01:53:00+08:00"
+}

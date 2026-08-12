@@ -74,6 +74,8 @@ async function request(path: string, init?: RequestInit): Promise<unknown> {
   return body;
 }
 
+export { request as apiRequest };
+
 export async function getFolderTree(): Promise<FolderTree> {
   return FolderTreeSchema.parse(await request("/folders/tree"));
 }

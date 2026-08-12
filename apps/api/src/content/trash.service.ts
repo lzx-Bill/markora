@@ -11,12 +11,16 @@ import { analyzeHierarchy, NamingPolicy } from "@markora/domain";
 import { Inject, Injectable } from "@nestjs/common";
 import { DatabaseService } from "../database/database.service.js";
 import { CodedHttpException } from "../http/coded-http.exception.js";
+import { RuntimeConfigService } from "../runtime-config/runtime-config.service.js";
 import { visibleFolders } from "./content.repository.js";
 
 @Injectable()
 export class TrashService {
   @Inject(DatabaseService)
   private readonly database!: DatabaseService;
+
+  @Inject(RuntimeConfigService)
+  private readonly runtimeConfig!: RuntimeConfigService;
 
   private readonly config = loadServerConfig(process.env);
   private readonly names = new NamingPolicy({
@@ -28,6 +32,7 @@ export class TrashService {
     type?: "FOLDER" | "DOCUMENT",
     cursor?: string,
   ): Promise<TrashList> {
+    const { trashRetentionDays } = await this.runtimeConfig.values();
     const [folders, documents] = await Promise.all([
       this.database.client.folder.findMany({
         where: {
@@ -59,10 +64,10 @@ export class TrashService {
     };
     const folderItems = folders
       .filter((folder) => !beneathTrash(folder.parentId))
-      .map((folder) => this.trashItem(folder, "FOLDER"));
+      .map((folder) => this.trashItem(folder, "FOLDER", trashRetentionDays));
     const documentItems = documents
       .filter((document) => !beneathTrash(document.folderId))
-      .map((document) => this.trashItem(document, "DOCUMENT"));
+      .map((document) => this.trashItem(document, "DOCUMENT", trashRetentionDays));
     let data = [
       ...(type === "DOCUMENT" ? [] : folderItems),
       ...(type === "FOLDER" ? [] : documentItems),
@@ -88,7 +93,7 @@ export class TrashService {
     const last = page.at(-1);
     return {
       data: page,
-      retentionDays: this.config.TRASH_RETENTION_DAYS,
+      retentionDays: trashRetentionDays,
       nextCursor:
         data.length > 50 && last
           ? Buffer.from(
@@ -422,6 +427,7 @@ export class TrashService {
       originalFolderId?: string | null;
     },
     type: "FOLDER" | "DOCUMENT",
+    retentionDays: number,
   ) {
     const deletedAt = item.deletedAt ?? new Date(0);
     return {
@@ -435,7 +441,7 @@ export class TrashService {
       originalPath: item.originalPath ?? `/${item.name}`,
       deletedAt: deletedAt.toISOString(),
       permanentlyDeletableAt: new Date(
-        deletedAt.getTime() + this.config.TRASH_RETENTION_DAYS * 86_400_000,
+        deletedAt.getTime() + retentionDays * 86_400_000,
       ).toISOString(),
       state: item.state === ResourceState.DELETING ? ("DELETING" as const) : ("TRASHED" as const),
     };

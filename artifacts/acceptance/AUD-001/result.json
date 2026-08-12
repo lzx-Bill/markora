@@ -1,0 +1,14 @@
+{
+  "id": "AUD-001",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/administration.integration.spec.ts: PostgreSQL rejects audit UPDATE and DELETE, filters events, and redacts content/secrets",
+    "apps/api/integration/auth.integration.spec.ts: successful and failed authentication events are recorded without credentials",
+    "apps/api/integration/content.integration.spec.ts: destructive trash and permanent-delete request events are recorded",
+    "apps/api/integration/portability.integration.spec.ts: export creation/download and job retry/cancel events are recorded",
+    "database/migrations/20260813000800_phase_7_settings_admin_audit/migration.sql: database-enforced append-only triggers"
+  ],
+  "browser": "Audit displayed bootstrap, login, password, preference, user-create and config events with request IDs and safe metadata only; action/result filters were present.",
+  "verifiedAt": "2026-08-13T01:53:00+08:00"
+}

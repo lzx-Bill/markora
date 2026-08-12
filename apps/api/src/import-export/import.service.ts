@@ -4,6 +4,7 @@ import { basename, dirname, extname, relative, resolve } from "node:path";
 import { loadServerConfig } from "@markora/config";
 import type {
   AcceptedJob,
+  AdminConfigValues,
   ExecuteImportRequest,
   ImportPreviewRequest,
   ImportPreviewResult,
@@ -25,6 +26,7 @@ import { visibleFolders } from "../content/content.repository.js";
 import { jobDto } from "../content/trash.service.js";
 import { DatabaseService } from "../database/database.service.js";
 import { CodedHttpException } from "../http/coded-http.exception.js";
+import { RuntimeConfigService } from "../runtime-config/runtime-config.service.js";
 import {
   type StoredImportPreview,
   StoredImportPreviewSchema,
@@ -35,6 +37,9 @@ import {
 export class ImportService {
   @Inject(DatabaseService)
   private readonly database!: DatabaseService;
+
+  @Inject(RuntimeConfigService)
+  private readonly runtimeConfig!: RuntimeConfigService;
 
   private readonly config = loadServerConfig(process.env);
   private readonly names = new NamingPolicy({
@@ -47,7 +52,8 @@ export class ImportService {
     rawPaths: unknown,
     requestId: string,
   ): Promise<ImportUploadResult> {
-    if (files.length === 0 || files.length > this.config.IMPORT_MAX_FILES) {
+    const runtime = await this.runtimeConfig.values();
+    if (files.length === 0 || files.length > runtime.importMaxFiles) {
       throw new CodedHttpException(
         "LIMIT_EXCEEDED",
         "Choose at least one file within the configured count limit.",
@@ -146,6 +152,7 @@ export class ImportService {
     input: ImportPreviewRequest,
     requestId: string,
   ): Promise<ImportPreviewResult> {
+    const runtime = await this.runtimeConfig.values();
     const upload = await this.database.client.importUpload.findFirst({
       where: {
         tokenHash: hashToken(input.uploadToken),
@@ -181,7 +188,7 @@ export class ImportService {
         const archive = await extractMarkdownZip(
           resolveContained(upload.tempPath, manifest.entries[0].storageName),
           extractedDirectory,
-          this.archiveLimits(),
+          this.archiveLimits(runtime),
         );
         ignoredNonMarkdown = archive.ignoredCount;
         extracted.push(...archive.entries);
@@ -199,7 +206,7 @@ export class ImportService {
             await registerMarkdownFile(
               resolveContained(upload.tempPath, entry.storageName),
               entry.relativePath,
-              this.archiveLimits(),
+              this.archiveLimits(runtime),
             ),
           );
         }
@@ -530,11 +537,11 @@ export class ImportService {
     }
   }
 
-  private archiveLimits() {
+  private archiveLimits(runtime: AdminConfigValues) {
     return {
-      maxFiles: this.config.IMPORT_MAX_FILES,
-      maxTotalBytes: this.config.IMPORT_MAX_TOTAL_BYTES,
-      maxEntryBytes: this.config.DOCUMENT_MAX_BYTES,
+      maxFiles: runtime.importMaxFiles,
+      maxTotalBytes: runtime.importMaxTotalBytes,
+      maxEntryBytes: runtime.documentMaxBytes,
       maxCompressionRatio: this.config.IMPORT_MAX_COMPRESSION_RATIO,
       maxDepth: this.config.WORKSPACE_MAX_DEPTH,
     };

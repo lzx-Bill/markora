@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@markora/config": "workspace:*",
+    "@markora/contracts": "workspace:*",
     "@markora/database": "workspace:*",
     "@markora/domain": "workspace:*",
     "@markora/portability": "workspace:*",

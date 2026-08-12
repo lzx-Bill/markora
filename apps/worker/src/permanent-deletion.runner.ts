@@ -3,6 +3,7 @@ import { loadServerConfig } from "@markora/config";
 import { BackgroundJobState, BackgroundJobType, Prisma, ResourceState } from "@markora/database";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { DatabaseService } from "./database.service.js";
+import { RuntimeConfigService } from "./runtime-config.service.js";
 
 @Injectable()
 export class PermanentDeletionRunner {
@@ -10,10 +11,14 @@ export class PermanentDeletionRunner {
   private readonly workerId = `delete-${process.pid}-${randomUUID()}`;
   private readonly logger = new Logger(PermanentDeletionRunner.name);
 
-  public constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
+  public constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(RuntimeConfigService) private readonly runtimeConfig: RuntimeConfigService,
+  ) {}
 
   public async runMaintenanceOnce(): Promise<void> {
-    const versionCutoff = new Date(Date.now() - this.config.VERSION_RETENTION_DAYS * 86_400_000);
+    const runtime = await this.runtimeConfig.values();
+    const versionCutoff = new Date(Date.now() - runtime.versionRetentionDays * 86_400_000);
     const expiredVersions = await this.database.client.documentVersion.findMany({
       where: { reason: "AUTO_SAVE", createdAt: { lt: versionCutoff } },
       select: { id: true },
@@ -26,7 +31,7 @@ export class PermanentDeletionRunner {
       });
     }
 
-    const trashCutoff = new Date(Date.now() - this.config.TRASH_RETENTION_DAYS * 86_400_000);
+    const trashCutoff = new Date(Date.now() - runtime.trashRetentionDays * 86_400_000);
     const folder = await this.database.client.folder.findFirst({
       where: {
         state: ResourceState.TRASHED,
@@ -42,6 +47,7 @@ export class PermanentDeletionRunner {
         folder.workspace.ownerUserId,
         "folder",
         folder.id,
+        runtime.trashRetentionDays,
       );
       return;
     }
@@ -60,6 +66,7 @@ export class PermanentDeletionRunner {
         document.workspace.ownerUserId,
         "document",
         document.id,
+        runtime.trashRetentionDays,
       );
     }
   }
@@ -156,6 +163,7 @@ export class PermanentDeletionRunner {
     ownerUserId: string,
     kind: "folder" | "document",
     targetId: string,
+    retentionDays: number,
   ): Promise<void> {
     await this.database.client.$transaction(async (transaction) => {
       const existing = await transaction.backgroundJob.findFirst({
@@ -202,7 +210,7 @@ export class PermanentDeletionRunner {
           targetId,
           result: "SUCCESS",
           requestId: `worker:${job.id}`,
-          metadata: { jobId: job.id, retentionDays: this.config.TRASH_RETENTION_DAYS },
+          metadata: { jobId: job.id, retentionDays },
         },
       });
     });

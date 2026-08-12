@@ -15,6 +15,7 @@ import { extractMarkdownZip, privatePath } from "@markora/portability";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { DatabaseService } from "../src/database.service.js";
 import { ImportExportRunner } from "../src/import-export.runner.js";
+import { RuntimeConfigService } from "../src/runtime-config.service.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl?.includes("markora_test")) {
@@ -42,7 +43,9 @@ beforeAll(() => {
 
 beforeEach(async () => {
   await rm(temporaryRoot, { recursive: true, force: true });
-  await database.auditEvent.deleteMany();
+  await database.$executeRaw`TRUNCATE TABLE "audit_events"`;
+  await database.systemConfig.deleteMany();
+  await database.serviceHeartbeat.deleteMany();
   await database.loginAttempt.deleteMany();
   await database.session.deleteMany();
   await database.workspace.deleteMany();
@@ -357,7 +360,8 @@ describe("Phase 6 restart-safe import and export", () => {
 });
 
 function runnerFor(client: DatabaseClient): ImportExportRunner {
-  return new ImportExportRunner({ client } as DatabaseService);
+  const database = { client } as DatabaseService;
+  return new ImportExportRunner(database, new RuntimeConfigService(database));
 }
 
 async function createOwner() {

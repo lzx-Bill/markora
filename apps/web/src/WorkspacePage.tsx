@@ -9,6 +9,7 @@ import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } fro
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { DocumentWorkspace } from "./DocumentWorkspace.js";
 import { dispatchPortability, PortabilityCenter } from "./PortabilityCenter.js";
+import { readPreferenceSettings } from "./preferences.js";
 import {
   bulkDocuments,
   createDocument,
@@ -68,7 +69,12 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { documentId } = useParams<{ documentId: string }>();
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const workspacePreferences = readPreferenceSettings();
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(() =>
+    workspacePreferences.restoreLastWorkspaceState
+      ? (localStorage.getItem("markora.last-folder.v1") ?? null)
+      : null,
+  );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [action, setAction] = useState<Action | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -81,6 +87,24 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
     queryKey: ["documents", selectedFolderId],
     queryFn: () => getDocuments(selectedFolderId),
   });
+  useEffect(() => {
+    if (treeQuery.data && selectedFolderId && !folders.some(({ id }) => id === selectedFolderId)) {
+      setSelectedFolderId(null);
+      localStorage.removeItem("markora.last-folder.v1");
+    }
+  }, [folders, selectedFolderId, treeQuery.data]);
+  const visibleDocuments = useMemo(() => {
+    const settings = readPreferenceSettings();
+    const documents = [...(documentsQuery.data?.data ?? [])];
+    documents.sort((left, right) => {
+      const compared =
+        settings.documentSort === "NAME"
+          ? left.name.localeCompare(right.name)
+          : left.updatedAt.localeCompare(right.updatedAt);
+      return settings.documentDirection === "ASC" ? compared : -compared;
+    });
+    return documents;
+  }, [documentsQuery.data]);
   const documentQuery = useQuery({
     queryKey: ["document", documentId],
     queryFn: () => getDocument(documentId ?? ""),
@@ -336,6 +360,7 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
                   folder={folder}
                   selectedId={selectedFolderId}
                   onSelect={selectFolder}
+                  rememberExpanded={workspacePreferences.rememberExpandedFolders ?? true}
                 />
               ))}
             </ul>
@@ -466,7 +491,7 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
           </div>
         ) : null}
         <ul className="document-list">
-          {documentsQuery.data?.data.map((document) => (
+          {visibleDocuments.map((document) => (
             <li
               key={document.id}
               className={documentId === document.id ? "active-document" : undefined}
@@ -637,6 +662,10 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
 
   function selectFolder(id: string | null) {
     setSelectedFolderId(id);
+    if (workspacePreferences.restoreLastWorkspaceState) {
+      if (id) localStorage.setItem("markora.last-folder.v1", id);
+      else localStorage.removeItem("markora.last-folder.v1");
+    }
     setSelectedIds(new Set());
   }
 
@@ -662,7 +691,7 @@ export function GlobalRail({
 }: {
   readonly principal: Principal;
   readonly onLogout: () => void | Promise<void>;
-  readonly current: "documents" | "search" | "trash" | "settings";
+  readonly current: "documents" | "search" | "trash" | "settings" | "admin";
   readonly onNewDocument?: () => void;
 }) {
   return (
@@ -713,6 +742,17 @@ export function GlobalRail({
             ⚙ <span>Settings</span>
           </Link>
         </li>
+        {principal.role === "ADMIN" ? (
+          <li>
+            <Link
+              className={current === "admin" ? "active" : undefined}
+              to="/admin/overview"
+              aria-label="Admin"
+            >
+              ◈ <span>Admin</span>
+            </Link>
+          </li>
+        ) : null}
       </ul>
       <div className="rail-footer">
         <button className="secondary-action" type="button" onClick={onLogout}>
@@ -732,13 +772,38 @@ function FolderTreeItem({
   folder,
   selectedId,
   onSelect,
+  rememberExpanded,
 }: {
   readonly folder: FolderTreeNode;
   readonly selectedId: string | null;
   readonly onSelect: (id: string) => void;
+  readonly rememberExpanded: boolean;
 }) {
+  const [expanded, setExpanded] = useState(() =>
+    rememberExpanded ? !readCollapsedFolders().has(folder.id) : true,
+  );
+  function toggle() {
+    const next = !expanded;
+    setExpanded(next);
+    if (!rememberExpanded) return;
+    const ids = readCollapsedFolders();
+    if (next) ids.delete(folder.id);
+    else ids.add(folder.id);
+    localStorage.setItem("markora.collapsed-folders.v1", JSON.stringify([...ids]));
+  }
   return (
     <li>
+      {folder.children.length > 0 ? (
+        <button
+          className="tree-expander"
+          type="button"
+          aria-label={`${expanded ? "Collapse" : "Expand"} ${folder.name}`}
+          aria-expanded={expanded}
+          onClick={toggle}
+        >
+          {expanded ? "⌄" : "›"}
+        </button>
+      ) : null}
       <button
         className={selectedId === folder.id ? "selected" : undefined}
         type="button"
@@ -748,7 +813,7 @@ function FolderTreeItem({
         <span>▢ {folder.name}</span>
         <small title={`${folder.documentCount} recursive documents`}>{folder.documentCount}</small>
       </button>
-      {folder.children.length > 0 ? (
+      {folder.children.length > 0 && expanded ? (
         <ul>
           {folder.children.map((child) => (
             <FolderTreeItem
@@ -756,12 +821,26 @@ function FolderTreeItem({
               folder={child}
               selectedId={selectedId}
               onSelect={onSelect}
+              rememberExpanded={rememberExpanded}
             />
           ))}
         </ul>
       ) : null}
     </li>
   );
+}
+
+function readCollapsedFolders(): Set<string> {
+  try {
+    const value = JSON.parse(
+      localStorage.getItem("markora.collapsed-folders.v1") ?? "[]",
+    ) as unknown;
+    return new Set(
+      Array.isArray(value) ? value.filter((id): id is string => typeof id === "string") : [],
+    );
+  } catch {
+    return new Set();
+  }
 }
 
 function DocumentSurface({

@@ -11,12 +11,16 @@ import { NamingPolicy } from "@markora/domain";
 import { Inject, Injectable } from "@nestjs/common";
 import { DatabaseService } from "../database/database.service.js";
 import { CodedHttpException } from "../http/coded-http.exception.js";
+import { RuntimeConfigService } from "../runtime-config/runtime-config.service.js";
 import { visibleFolders } from "./content.repository.js";
 
 @Injectable()
 export class VersionService {
   @Inject(DatabaseService)
   private readonly database!: DatabaseService;
+
+  @Inject(RuntimeConfigService)
+  private readonly runtimeConfig!: RuntimeConfigService;
 
   private readonly config = loadServerConfig(process.env);
   private readonly names = new NamingPolicy({
@@ -28,6 +32,7 @@ export class VersionService {
     documentId: string,
     cursor?: string,
   ): Promise<DocumentVersionList> {
+    const { versionRetentionDays } = await this.runtimeConfig.values();
     await this.assertVisibleDocument(principal, documentId);
     const beforeVersionNo = cursor ? this.decodeCursor(cursor) : undefined;
     const versions = await this.database.client.documentVersion.findMany({
@@ -43,7 +48,7 @@ export class VersionService {
     const page = versions.slice(0, 50);
     return {
       data: page.map(versionSummary),
-      retentionDays: this.config.VERSION_RETENTION_DAYS,
+      retentionDays: versionRetentionDays,
       nextCursor:
         versions.length > 50 && page.at(-1)
           ? Buffer.from(String(page.at(-1)?.versionNo), "utf8").toString("base64url")
@@ -178,7 +183,8 @@ export class VersionService {
     baseRevision: number,
     requestId: string,
   ): Promise<{ revision: number; safetyVersionId: string }> {
-    if (Buffer.byteLength(markdown, "utf8") > this.config.DOCUMENT_MAX_BYTES) {
+    const { documentMaxBytes } = await this.runtimeConfig.values();
+    if (Buffer.byteLength(markdown, "utf8") > documentMaxBytes) {
       throw new CodedHttpException("LIMIT_EXCEEDED", "The Markdown document is too large.", 413);
     }
     return this.database.client.$transaction(

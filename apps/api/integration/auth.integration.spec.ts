@@ -47,7 +47,9 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await database.auditEvent.deleteMany();
+  await database.$executeRaw`TRUNCATE TABLE "audit_events"`;
+  await database.systemConfig.deleteMany();
+  await database.serviceHeartbeat.deleteMany();
   await database.loginAttempt.deleteMany();
   await database.session.deleteMany();
   await database.workspace.deleteMany();
@@ -119,7 +121,15 @@ describe("Phase 1 identity and isolation", () => {
       .send({ identifier: "unknown", password: "wrong-password" })
       .expect(401);
     expect(failure.body.error.code).toBe("AUTHENTICATION_FAILED");
-    expect(JSON.stringify(await database.auditEvent.findMany())).not.toContain("wrong-password");
+    const auditEvents = await database.auditEvent.findMany({
+      where: { action: "auth.login" },
+      orderBy: { occurredAt: "asc" },
+    });
+    expect(auditEvents).toEqual([
+      expect.objectContaining({ action: "auth.login", result: "SUCCESS" }),
+      expect.objectContaining({ action: "auth.login", result: "FAILURE" }),
+    ]);
+    expect(JSON.stringify(auditEvents)).not.toContain("wrong-password");
   });
 
   it("rate limits invalid login attempts and rejects requests without a valid origin", async () => {

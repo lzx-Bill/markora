@@ -1,6 +1,6 @@
 {
-  "phase": 6,
-  "generatedAt": "2026-08-13T01:08:00+08:00",
+  "phase": 7,
+  "generatedAt": "2026-08-13T01:53:00+08:00",
   "requirements": {
     "FOL-001": "FOL-001/result.json",
     "FOL-002": "FOL-002/result.json",
@@ -49,6 +49,14 @@
     "JOB-001": "JOB-001/result.json",
     "JOB-002": "JOB-002/result.json",
     "ISO-001": "ISO-001/result.json",
-    "ISO-002": "ISO-002/result.json"
+    "ISO-002": "ISO-002/result.json",
+    "PREF-001": "PREF-001/result.json",
+    "PREF-002": "PREF-002/result.json",
+    "ADM-001": "ADM-001/result.json",
+    "ADM-002": "ADM-002/result.json",
+    "ADM-003": "ADM-003/result.json",
+    "ADM-004": "ADM-004/result.json",
+    "ADM-005": "ADM-005/result.json",
+    "AUD-001": "AUD-001/result.json"
   }
 }

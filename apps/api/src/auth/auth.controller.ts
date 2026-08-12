@@ -39,7 +39,7 @@ export class AuthController {
     setSessionCookie(
       response,
       result.token,
-      this.config.SESSION_TTL_DAYS,
+      result.sessionTtlDays,
       this.config.NODE_ENV === "production",
     );
     return { principal: result.principal };
