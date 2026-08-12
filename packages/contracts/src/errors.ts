@@ -2,6 +2,11 @@ import { z } from "zod";
 
 export const ErrorCodeSchema = z.enum([
   "VALIDATION_FAILED",
+  "UNAUTHENTICATED",
+  "AUTHENTICATION_FAILED",
+  "PASSWORD_POLICY_FAILED",
+  "CSRF_FAILED",
+  "BOOTSTRAP_DISABLED",
   "NAME_CONFLICT",
   "INVALID_NAME",
   "FOLDER_CYCLE",

@@ -1,8 +1,10 @@
 import type { HealthResponse } from "@markora/contracts";
 import { Controller, Get, Inject, ServiceUnavailableException } from "@nestjs/common";
+import { PublicRoute } from "../auth/public.decorator.js";
 import { HealthService } from "./health.service.js";
 
 @Controller("health")
+@PublicRoute()
 export class HealthController {
   @Inject(HealthService)
   private readonly healthService!: HealthService;

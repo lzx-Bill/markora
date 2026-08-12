@@ -6,5 +6,6 @@ packages:
 onlyBuiltDependencies:
   - '@biomejs/biome'
   - '@prisma/engines'
+  - argon2
   - esbuild
   - prisma

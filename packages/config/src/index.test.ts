@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ConfigValidationError, loadServerConfig } from "./index.js";
+import { ConfigValidationError, loadBootstrapConfig, loadServerConfig } from "./index.js";
 
 const validEnvironment = {
   NODE_ENV: "test",
@@ -13,11 +13,16 @@ describe("loadServerConfig", () => {
     const config = loadServerConfig(validEnvironment);
     expect(config.API_PORT).toBe(27184);
     expect(config.LOG_LEVEL).toBe("info");
+    expect(config.SESSION_TTL_DAYS).toBe(30);
   });
 
   it("fails fast without required secrets", () => {
     expect(() => loadServerConfig({ ...validEnvironment, SESSION_SECRET: "short" })).toThrow(
       ConfigValidationError,
     );
+  });
+
+  it("requires explicit bootstrap credentials", () => {
+    expect(() => loadBootstrapConfig({})).toThrow(ConfigValidationError);
   });
 });

@@ -16,6 +16,7 @@ services:
       retries: 20
     volumes:
       - markora-postgres-data:/var/lib/postgresql
+      - ./init/01-test-database.sql:/docker-entrypoint-initdb.d/01-test-database.sql:ro
 
 volumes:
   markora-postgres-data:

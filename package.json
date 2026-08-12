@@ -8,18 +8,21 @@
     "pnpm": ">=10.28.2 <11"
   },
   "scripts": {
+    "postinstall": "pnpm db:generate",
     "build": "pnpm -r --if-present build",
+    "bootstrap:admin": "pnpm --filter @markora/api bootstrap:admin",
     "dev": "pnpm --parallel --filter @markora/web --filter @markora/api --filter @markora/worker dev",
     "lint": "biome check .",
     "format": "biome format --write .",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
-    "test:integration": "pnpm --filter @markora/database test:integration",
+    "test:integration": "pnpm --filter @markora/database test:integration && pnpm --filter @markora/api test:integration",
     "openapi:generate": "pnpm --filter @markora/contracts openapi:generate",
     "openapi:check": "pnpm --filter @markora/contracts openapi:check",
     "db:validate": "prisma validate --config database/prisma.config.ts",
+    "db:generate": "prisma generate --config database/prisma.config.ts",
     "db:migrate": "prisma migrate deploy --config database/prisma.config.ts",
-    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm openapi:check && pnpm db:validate && pnpm build"
+    "verify": "pnpm db:generate && pnpm lint && pnpm typecheck && pnpm test && pnpm openapi:check && pnpm db:validate && pnpm build"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.8",

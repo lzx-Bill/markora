@@ -6,3 +6,97 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum AuditResult {
+  SUCCESS
+  FAILURE
+}
+
+model User {
+  id                 String        @id @default(uuid()) @db.Uuid
+  username           String
+  usernameCanonical  String        @unique @map("username_canonical")
+  email              String
+  emailCanonical     String        @unique @map("email_canonical")
+  displayName        String        @map("display_name")
+  passwordHash       String        @map("password_hash")
+  role               UserRole      @default(USER)
+  status             UserStatus    @default(ACTIVE)
+  mustChangePassword Boolean       @default(false) @map("must_change_password")
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  workspace          Workspace?
+  sessions           Session[]
+  auditEvents         AuditEvent[]  @relation("AuditActor")
+
+  @@map("users")
+}
+
+model Workspace {
+  id          String       @id @default(uuid()) @db.Uuid
+  ownerUserId String       @unique @map("owner_user_id") @db.Uuid
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  owner       User         @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
+  auditEvents AuditEvent[]
+
+  @@map("workspaces")
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  tokenHash        String    @unique @map("token_hash")
+  familyId         String    @map("family_id") @db.Uuid
+  userAgentSummary String    @map("user_agent_summary")
+  lastActiveAt     DateTime  @default(now()) @map("last_active_at") @db.Timestamptz(3)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt, expiresAt])
+  @@map("sessions")
+}
+
+model AuditEvent {
+  id          String       @id @default(uuid()) @db.Uuid
+  occurredAt  DateTime     @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  actorUserId String?      @map("actor_user_id") @db.Uuid
+  workspaceId String?      @map("workspace_id") @db.Uuid
+  action      String
+  targetType  String       @map("target_type")
+  targetId    String?      @map("target_id")
+  result      AuditResult
+  requestId   String       @map("request_id")
+  metadata    Json         @default("{}") @map("metadata_json") @db.JsonB
+  actor       User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  workspace   Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([occurredAt(sort: Desc)])
+  @@index([actorUserId, action, result])
+  @@map("audit_events")
+}
+
+model LoginAttempt {
+  id          String    @id @default(uuid()) @db.Uuid
+  subjectHash String    @map("subject_hash")
+  networkHash String    @map("network_hash")
+  windowStart DateTime  @map("window_start") @db.Timestamptz(3)
+  count       Int       @default(0)
+  blockedUntil DateTime? @map("blocked_until") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([subjectHash, networkHash, windowStart])
+  @@index([blockedUntil])
+  @@map("login_attempts")
+}

@@ -1,16 +1,11 @@
-import { loadServerConfig } from "@markora/config";
 import type { HealthResponse } from "@markora/contracts";
-import { Injectable, type OnApplicationShutdown } from "@nestjs/common";
-import { Pool } from "pg";
+import { Inject, Injectable } from "@nestjs/common";
+import { DatabaseService } from "../database/database.service.js";
 
 @Injectable()
-export class HealthService implements OnApplicationShutdown {
-  private readonly pool: Pool;
-
-  public constructor() {
-    const config = loadServerConfig(process.env);
-    this.pool = new Pool({ connectionString: config.DATABASE_URL, max: 2 });
-  }
+export class HealthService {
+  @Inject(DatabaseService)
+  private readonly database!: DatabaseService;
 
   public liveness(): HealthResponse {
     return {
@@ -22,11 +17,7 @@ export class HealthService implements OnApplicationShutdown {
   }
 
   public async readiness(): Promise<HealthResponse> {
-    await this.pool.query("SELECT 1");
+    await this.database.client.$queryRaw`SELECT 1`;
     return this.liveness();
-  }
-
-  public async onApplicationShutdown(): Promise<void> {
-    await this.pool.end();
   }
 }

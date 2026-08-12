@@ -21,7 +21,6 @@ Replace the example session secret before using any shared or production-like en
 docker compose -f infra/docker/compose.postgres.yaml up -d --wait
 $env:DATABASE_URL = "postgresql://markora:markora@localhost:27185/markora?schema=public"
 pnpm db:migrate
-pnpm test:integration
 ```
 
 The development Compose file binds PostgreSQL only to loopback. Production topology and reverse
@@ -38,10 +37,33 @@ pnpm dev
 
 The Web process uses port `27183`; the API uses `27184`; the Worker has no public port.
 
+## One-time bootstrap admin
+
+Fill the `BOOTSTRAP_ADMIN_*` values in `.env`, then run:
+
+```powershell
+pnpm bootstrap:admin
+```
+
+The command succeeds only while the users table is empty. It creates exactly one admin and one
+workspace, stores only an Argon2id password hash, and forces a password change on first login.
+
+## Integration database
+
+Fresh development Compose volumes create `markora_test` automatically. Migrate and test it without
+touching local development data:
+
+```powershell
+$env:DATABASE_URL = "postgresql://markora:markora@localhost:27185/markora_test?schema=public"
+pnpm db:migrate
+pnpm test:integration
+```
+
 ## Verify
 
 ```powershell
 pnpm verify
+$env:DATABASE_URL = "postgresql://markora:markora@localhost:27185/markora_test?schema=public"
 pnpm test:integration
 ```
 

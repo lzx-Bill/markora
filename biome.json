@@ -6,6 +6,7 @@
       "!**/dist",
       "!**/coverage",
       "!**/node_modules",
+      "!database/generated",
       "!markora-spec",
       "!packages/contracts/openapi.json"
     ]
@@ -23,6 +24,9 @@
     }
   },
   "javascript": {
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    },
     "formatter": {
       "quoteStyle": "double",
       "semicolons": "always",

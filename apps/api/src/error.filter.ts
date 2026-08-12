@@ -8,10 +8,11 @@ import {
   HttpStatus,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
+import { CodedHttpException } from "./http/coded-http.exception.js";
 
 const statusCodes: Partial<Record<number, ErrorCode>> = {
   [HttpStatus.BAD_REQUEST]: "VALIDATION_FAILED",
-  [HttpStatus.UNAUTHORIZED]: "SESSION_REVOKED",
+  [HttpStatus.UNAUTHORIZED]: "UNAUTHENTICATED",
   [HttpStatus.FORBIDDEN]: "FORBIDDEN",
   [HttpStatus.NOT_FOUND]: "NOT_FOUND",
   [HttpStatus.CONFLICT]: "RESOURCE_STATE_CONFLICT",
@@ -26,9 +27,15 @@ export class ApiExceptionFilter implements ExceptionFilter {
     const context = host.switchToHttp();
     const request = context.getRequest<Request>();
     const response = context.getResponse<Response>();
-    const requestId = request.header("x-request-id") ?? `req_${randomUUID()}`;
+    const requestId =
+      (request as Request & { requestId?: string }).requestId ??
+      request.header("x-request-id") ??
+      `req_${randomUUID()}`;
     const status = exception instanceof HttpException ? exception.getStatus() : 500;
-    const code = statusCodes[status] ?? "INTERNAL_ERROR";
+    const code =
+      exception instanceof CodedHttpException
+        ? exception.code
+        : (statusCodes[status] ?? "INTERNAL_ERROR");
     const message =
       status >= 500
         ? "The service could not complete the request. Your data was not changed."
@@ -37,7 +44,14 @@ export class ApiExceptionFilter implements ExceptionFilter {
     response
       .status(status)
       .header("x-request-id", requestId)
-      .json(createApiError(code, message, requestId));
+      .json(
+        createApiError(
+          code,
+          message,
+          requestId,
+          exception instanceof CodedHttpException ? exception.details : undefined,
+        ),
+      );
   }
 
   private safeMessage(exception: unknown): string {

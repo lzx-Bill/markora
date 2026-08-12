@@ -7,6 +7,9 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 27183,
     strictPort: true,
+    proxy: {
+      "/api": "http://127.0.0.1:27184",
+    },
   },
   preview: {
     host: "0.0.0.0",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { InvalidNameError, NamingPolicy } from "./naming.js";
+import { canonicalizeIdentity, InvalidNameError, NamingPolicy } from "./naming.js";
 
 const policy = new NamingPolicy();
 
@@ -13,5 +13,11 @@ describe("NamingPolicy", () => {
 
   it.each(["../note.md", "CON.md", "note.txt", "note.md."])("rejects %s", (name) => {
     expect(() => policy.validate(name, "document")).toThrow(InvalidNameError);
+  });
+});
+
+describe("canonicalizeIdentity", () => {
+  it("uses the same Unicode normalization and full case folding", () => {
+    expect(canonicalizeIdentity(" STRAẞE ")).toBe("strasse");
   });
 });

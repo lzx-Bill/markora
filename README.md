@@ -5,8 +5,9 @@ the frozen V1 specification in [`markora-spec`](./markora-spec/README.md).
 
 ## Current status
 
-Phase 0 foundation: pnpm monorepo, typed configuration, API contracts, migration harness, process
-entry points, design tokens and the accessible application shell.
+Phase 1 identity and isolation: one-time bootstrap admin, Argon2id credentials, opaque cookie
+sessions, authentication/CSRF guards, login throttling/audit, account session controls, and an
+authenticated application shell backed by real PostgreSQL integration tests.
 
 ## Repository map
 

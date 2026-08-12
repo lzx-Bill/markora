@@ -1,8 +1,10 @@
 node_modules/
 dist/
+database/generated/
 coverage/
 .vite/
 .playwright-cli/
+output/playwright/
 .turbo/
 .env
 .env.*

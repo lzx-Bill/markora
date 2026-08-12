@@ -53,3 +53,7 @@ export class NamingPolicy {
     return { name, normalizedName: caseFold(name) };
   }
 }
+
+export function canonicalizeIdentity(value: string): string {
+  return caseFold(value.trim().normalize("NFC"));
+}

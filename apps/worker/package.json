@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "node --env-file-if-exists=../../.env --import tsx --watch src/main.ts",
     "start": "node dist/main.js",
     "build": "tsup src/main.ts --format esm --platform node --sourcemap --clean",
     "typecheck": "tsc --noEmit",
