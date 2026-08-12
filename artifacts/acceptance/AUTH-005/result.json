@@ -1,0 +1,11 @@
+{
+  "id": "AUTH-005",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/api/integration/auth.integration.spec.ts: session list and single-session revocation are owner-scoped",
+    "apps/api/integration/auth.integration.spec.ts: revoke-others revokes another owned session and preserves the current session"
+  ],
+  "browser": "Settings > Sessions listed the current device without a token; Sign out other sessions completed and the current page remained authorized (output/playwright/phase1-auth-sessions.png).",
+  "verifiedAt": "2026-08-13T03:17:00+08:00"
+}

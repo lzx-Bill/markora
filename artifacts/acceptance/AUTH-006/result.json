@@ -1,0 +1,11 @@
+{
+  "id": "AUTH-006",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/auth.integration.spec.ts: bootstrap password is stored only as Argon2id, session token only as SHA-256, token is absent from login payload and supplied passwords are absent from audit rows"
+  ],
+  "security": "Structured request logs observed during integration and browser runs contained request/actor/route/result/error metadata only; no password, raw cookie, session token or configured secret was emitted.",
+  "browser": "The Sessions UI explicitly exposes only shortened device information and never renders session tokens.",
+  "verifiedAt": "2026-08-13T03:17:00+08:00"
+}

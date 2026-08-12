@@ -6,5 +6,5 @@
     "apps/api/integration/portability.integration.spec.ts: tenant checks are enforced in service queries and download authorization",
     "apps/worker/integration/import-export.integration.spec.ts: execution rechecks active owner/workspace and reachable target hierarchy"
   ],
-  "verifiedAt": "2026-08-13T01:08:00+08:00"
+  "verifiedAt": "2026-08-13T03:19:00+08:00"
 }

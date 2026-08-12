@@ -1,0 +1,11 @@
+{
+  "id": "AUTH-003",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/auth.integration.spec.ts: secure opaque session cookie, generic failure, login audit, CSRF rejection and configured rate limit"
+  ],
+  "browser": "A wrong password produced only The username/email or password is incorrect; a valid password established the authenticated flow without exposing a token.",
+  "security": "Cookie is HttpOnly and SameSite=Strict; only a SHA-256 token hash is persisted; failed requests reached RATE_LIMITED after the configured threshold.",
+  "verifiedAt": "2026-08-13T03:17:00+08:00"
+}

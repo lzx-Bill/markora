@@ -1,0 +1,11 @@
+{
+  "id": "AUTH-001",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/auth.integration.spec.ts: creates exactly one bootstrap admin and rejects a second bootstrap attempt"
+  ],
+  "operational": "The isolated Phase 8 production stack created one bootstrap administrator through pnpm bootstrap:admin; the browser was forced to replace the bootstrap password before workspace access.",
+  "browser": "The first successful sign-in displayed only the mandatory Choose your own password flow, then entered the workspace after replacement.",
+  "verifiedAt": "2026-08-13T03:17:00+08:00"
+}

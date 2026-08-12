@@ -1,0 +1,10 @@
+{
+  "id": "AUTH-004",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/auth.integration.spec.ts: disabling an authenticated user makes /api/v1/auth/me return SESSION_REVOKED and revokes the stored session"
+  ],
+  "browser": "While the session page was open, changing the user to DISABLED and reloading immediately returned the browser to Sign in (output/playwright/phase1-auth-disabled-session.png).",
+  "verifiedAt": "2026-08-13T03:17:00+08:00"
+}
