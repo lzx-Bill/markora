@@ -1,5 +1,11 @@
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ConfigValidationError, loadBootstrapConfig, loadServerConfig } from "./index.js";
+import {
+  ConfigValidationError,
+  loadBootstrapConfig,
+  loadServerConfig,
+  loadUploadStorageConfig,
+} from "./index.js";
 
 const validEnvironment = {
   NODE_ENV: "test",
@@ -19,6 +25,36 @@ describe("loadServerConfig", () => {
     expect(config.DOCUMENT_LARGE_BYTES).toBe(1_048_576);
     expect(config.DOCUMENT_LARGE_LINES).toBe(50_000);
     expect(config.VERSION_SNAPSHOT_INTERVAL_MINUTES).toBe(10);
+    expect(config.IMPORT_MAX_FILES).toBe(2_000);
+    expect(config.IMPORT_MAX_COMPRESSION_RATIO).toBe(100);
+    expect(config.EXPORT_PATH_MAX_BYTES).toBe(240);
+    expect(config.TEMP_ROOT).toMatch(/[\\/]tmp$/u);
+  });
+
+  it("resolves one shared relative temp root for package processes", () => {
+    const root = resolve("markora-root");
+    const config = loadServerConfig({
+      ...validEnvironment,
+      MARKORA_ROOT: root,
+      TEMP_ROOT: "./private-temp",
+    });
+    expect(config.TEMP_ROOT).toBe(resolve(root, "private-temp"));
+  });
+
+  it("loads upload storage limits without unrelated service credentials", () => {
+    const root = resolve("markora-root");
+    expect(
+      loadUploadStorageConfig({
+        MARKORA_ROOT: root,
+        TEMP_ROOT: "./private-temp",
+        IMPORT_MAX_FILES: "12",
+        IMPORT_UPLOAD_MAX_BYTES: "4096",
+      }),
+    ).toMatchObject({
+      TEMP_ROOT: resolve(root, "private-temp"),
+      IMPORT_MAX_FILES: 12,
+      IMPORT_UPLOAD_MAX_BYTES: 4096,
+    });
   });
 
   it("fails fast without required secrets", () => {

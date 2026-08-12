@@ -1,0 +1,10 @@
+{
+  "id": "EXP-003",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/portability.integration.spec.ts: repeatable-read immutable manifest remains unchanged after concurrent document edit",
+    "apps/worker/integration/import-export.integration.spec.ts: worker archives manifest Markdown without rereading live documents"
+  ],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

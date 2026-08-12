@@ -1,0 +1,25 @@
+{
+  "virtualArchiveEntries": {
+    "duplicateNormalized": ["Résumé.md", "RÉSUMÉ.md"],
+    "caseCollision": ["Note.md", "note.md"],
+    "traversal": ["../escape.md"],
+    "absolute": ["/absolute.md", "C:/absolute.md"],
+    "backslashTraversal": ["folder\\..\\escape.md"],
+    "deep": ["a/b/c/d/e/f/g/h/i/deep.md"],
+    "symlink": ["link.md"],
+    "duplicateZip": ["same.md", "same.md"],
+    "partialFailure": ["valid.md", "missing-after-preview.md"]
+  },
+  "invalidUtf8Base64": "//4=",
+  "compressionBomb": {
+    "path": "bomb.md",
+    "repeatedByte": 97,
+    "uncompressedBytes": 50000,
+    "maximumAcceptedRatio": 2
+  },
+  "limits": {
+    "tooLargeBytes": 5242881,
+    "tooManyFiles": 2001,
+    "maximumDepth": 8
+  }
+}

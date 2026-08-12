@@ -80,6 +80,8 @@ describe("global keyboard surfaces", () => {
     fireEvent.keyDown(window, { key: "k", ctrlKey: true });
     expect(await screen.findByRole("option", { name: /Create document/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Create folder/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Import Markdown/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Export workspace/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Focus editor/ })).toBeInTheDocument();
   });
 });

@@ -1,9 +1,13 @@
 import {
+  type AcceptedJob,
+  AcceptedJobSchema,
   ApiErrorSchema,
   type BackgroundJob,
   BackgroundJobSchema,
   type BulkDocumentResult,
   BulkDocumentResultSchema,
+  type CreateExportResult,
+  CreateExportResultSchema,
   type DocumentDetail,
   DocumentDetailSchema,
   type DocumentList,
@@ -12,10 +16,17 @@ import {
   DocumentVersionDetailSchema,
   type DocumentVersionList,
   DocumentVersionListSchema,
+  type ExportRequest,
   type Folder,
   FolderSchema,
   type FolderTree,
   FolderTreeSchema,
+  type ImportPreviewResult,
+  ImportPreviewResultSchema,
+  type ImportUploadResult,
+  ImportUploadResultSchema,
+  type JobItemPage,
+  JobItemPageSchema,
   type PermanentDeleteResult,
   PermanentDeleteResultSchema,
   type QuickOpenResult,
@@ -210,6 +221,72 @@ export async function getJob(id: string): Promise<BackgroundJob> {
   return BackgroundJobSchema.parse(await request(`/jobs/${id}`));
 }
 
+export async function uploadImport(files: readonly File[]): Promise<ImportUploadResult> {
+  const form = new FormData();
+  form.append(
+    "relativePaths",
+    JSON.stringify(files.map((file) => file.webkitRelativePath || file.name)),
+  );
+  for (const file of files) form.append("files", file, file.name);
+  return ImportUploadResultSchema.parse(
+    await formRequest("/imports/uploads", { method: "POST", body: form }),
+  );
+}
+
+export async function previewImport(
+  uploadToken: string,
+  targetFolderId: string | null,
+): Promise<ImportPreviewResult> {
+  return ImportPreviewResultSchema.parse(
+    await request("/imports/preview", {
+      method: "POST",
+      body: JSON.stringify({ uploadToken, targetFolderId }),
+    }),
+  );
+}
+
+export async function executeImport(
+  planId: string,
+  input: {
+    idempotencyKey: string;
+    conflictStrategy: "KEEP_BOTH" | "SKIP" | "REPLACE";
+    overrides: { sourceKey: string; strategy: "KEEP_BOTH" | "SKIP" | "REPLACE" }[];
+  },
+): Promise<AcceptedJob> {
+  return AcceptedJobSchema.parse(
+    await request(`/imports/${planId}/execute`, { method: "POST", body: JSON.stringify(input) }),
+  );
+}
+
+export async function getJobItems(id: string): Promise<JobItemPage> {
+  return JobItemPageSchema.parse(await request(`/jobs/${id}/items`));
+}
+
+export async function cancelJob(id: string): Promise<AcceptedJob> {
+  return AcceptedJobSchema.parse(await request(`/jobs/${id}/cancel`, { method: "POST" }));
+}
+
+export async function retryFailedJob(id: string): Promise<AcceptedJob> {
+  return AcceptedJobSchema.parse(await request(`/jobs/${id}/retry-failed`, { method: "POST" }));
+}
+
+export async function createExport(input: ExportRequest): Promise<CreateExportResult> {
+  return CreateExportResultSchema.parse(
+    await request("/exports", { method: "POST", body: JSON.stringify(input) }),
+  );
+}
+
+export async function downloadDocumentSource(id: string): Promise<void> {
+  await download(`/documents/${id}/download`, "document.md");
+}
+
+export async function downloadExport(jobId: string, token: string): Promise<void> {
+  await download(
+    `/exports/${jobId}/download?${new URLSearchParams({ token }).toString()}`,
+    "markora-export.zip",
+  );
+}
+
 export async function searchDocuments(input: {
   q: string;
   scope: "all" | "folder" | "subtree";
@@ -230,4 +307,44 @@ export async function searchDocuments(input: {
 export async function quickOpenDocuments(q: string): Promise<QuickOpenResult> {
   const query = new URLSearchParams({ q });
   return QuickOpenResultSchema.parse(await request(`/quick-open?${query.toString()}`));
+}
+
+async function formRequest(path: string, init: RequestInit): Promise<unknown> {
+  const response = await fetch(`/api/v1${path}`, { credentials: "same-origin", ...init });
+  const body: unknown = await response.json();
+  if (!response.ok) throwApiError(body);
+  return body;
+}
+
+async function download(path: string, fallbackName: string): Promise<void> {
+  const response = await fetch(`/api/v1${path}`, { credentials: "same-origin" });
+  if (!response.ok) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      body = null;
+    }
+    throwApiError(body);
+  }
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/iu)?.[1];
+  const name = encoded ? decodeURIComponent(encoded) : fallbackName;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function throwApiError(body: unknown): never {
+  const parsed = ApiErrorSchema.safeParse(body);
+  throw new WorkspaceApiError(
+    parsed.success ? parsed.data.error.code : "UNKNOWN",
+    parsed.success ? parsed.data.error.message : "The request could not be completed.",
+    parsed.success ? parsed.data.error.requestId : undefined,
+    parsed.success ? parsed.data.error.details : undefined,
+  );
 }

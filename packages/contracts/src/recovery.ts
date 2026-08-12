@@ -86,12 +86,21 @@ export const BackgroundJobStateSchema = z.enum([
 
 export const BackgroundJobSchema = z.object({
   id: OpaqueIdSchema,
-  type: z.enum(["PERMANENT_DELETE_FOLDER", "PERMANENT_DELETE_DOCUMENT"]),
+  type: z.enum(["PERMANENT_DELETE_FOLDER", "PERMANENT_DELETE_DOCUMENT", "IMPORT", "EXPORT"]),
   state: BackgroundJobStateSchema,
-  targetType: z.enum(["folder", "document"]),
+  targetType: z.enum(["folder", "document", "import-plan", "export"]),
   targetId: OpaqueIdSchema,
   progress: z.number().int().min(0).max(100),
+  progressDetail: z.object({
+    completed: z.number().int().nonnegative(),
+    total: z.number().int().nonnegative(),
+    currentItem: z.string().nullable(),
+    phase: z.string(),
+  }),
+  result: z.record(z.string(), z.unknown()).nullable(),
   errorCode: z.string().nullable(),
+  parentJobId: OpaqueIdSchema.nullable(),
+  cancellationRequested: z.boolean(),
   createdAt: z.iso.datetime(),
   startedAt: z.iso.datetime().nullable(),
   completedAt: z.iso.datetime().nullable(),

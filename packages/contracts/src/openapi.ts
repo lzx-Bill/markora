@@ -26,6 +26,16 @@ import {
 import { ApiErrorSchema } from "./errors.js";
 import { HealthResponseSchema } from "./health.js";
 import {
+  AcceptedJobSchema,
+  CreateExportResultSchema,
+  ExecuteImportRequestSchema,
+  ExportRequestSchema,
+  ImportPreviewRequestSchema,
+  ImportPreviewResultSchema,
+  ImportUploadResultSchema,
+  JobItemPageSchema,
+} from "./portability.js";
+import {
   BackgroundJobSchema,
   DocumentVersionDetailSchema,
   DocumentVersionListSchema,
@@ -87,6 +97,18 @@ const permanentDeleteResultSchema = z.toJSONSchema(PermanentDeleteResultSchema, 
 const backgroundJobSchema = z.toJSONSchema(BackgroundJobSchema, { target: "draft-7" });
 const searchResultPageSchema = z.toJSONSchema(SearchResultPageSchema, { target: "draft-7" });
 const quickOpenResultSchema = z.toJSONSchema(QuickOpenResultSchema, { target: "draft-7" });
+const acceptedJobSchema = z.toJSONSchema(AcceptedJobSchema, { target: "draft-7" });
+const importUploadResultSchema = z.toJSONSchema(ImportUploadResultSchema, { target: "draft-7" });
+const importPreviewRequestSchema = z.toJSONSchema(ImportPreviewRequestSchema, {
+  target: "draft-7",
+});
+const importPreviewResultSchema = z.toJSONSchema(ImportPreviewResultSchema, { target: "draft-7" });
+const executeImportRequestSchema = z.toJSONSchema(ExecuteImportRequestSchema, {
+  target: "draft-7",
+});
+const jobItemPageSchema = z.toJSONSchema(JobItemPageSchema, { target: "draft-7" });
+const exportRequestSchema = z.toJSONSchema(ExportRequestSchema, { target: "draft-7" });
+const createExportResultSchema = z.toJSONSchema(CreateExportResultSchema, { target: "draft-7" });
 
 const uuidPathParameter = {
   name: "id",
@@ -404,6 +426,157 @@ export const openApiDocument = {
         responses: {
           "200": jsonResponse("Owned durable job state.", backgroundJobSchema),
           "404": jsonResponse("Job absent from this workspace or owner.", errorSchema),
+        },
+      },
+    },
+    "/jobs/{id}/items": {
+      get: {
+        operationId: "listJobItems",
+        parameters: [
+          uuidPathParameter,
+          { name: "cursor", in: "query", required: false, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": jsonResponse(
+            "Owned job item outcomes and exact failure reasons.",
+            jobItemPageSchema,
+          ),
+          "404": jsonResponse("Job absent from this workspace or owner.", errorSchema),
+        },
+      },
+    },
+    "/jobs/{id}/cancel": {
+      post: {
+        operationId: "cancelJob",
+        parameters: [uuidPathParameter],
+        responses: {
+          "201": jsonResponse(
+            "Cancellation accepted for an active import or export.",
+            acceptedJobSchema,
+          ),
+          "409": jsonResponse("Job is no longer cancellable.", errorSchema),
+        },
+      },
+    },
+    "/jobs/{id}/retry-failed": {
+      post: {
+        operationId: "retryFailedJobItems",
+        parameters: [uuidPathParameter],
+        responses: {
+          "201": jsonResponse("A child job containing failed items only.", acceptedJobSchema),
+          "409": jsonResponse("Job has no retryable failed items.", errorSchema),
+        },
+      },
+    },
+    "/imports/uploads": {
+      post: {
+        operationId: "uploadImport",
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                required: ["files"],
+                properties: {
+                  files: { type: "array", items: { type: "string", format: "binary" } },
+                  relativePaths: { type: "string", description: "JSON array aligned with files." },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": jsonResponse(
+            "Private streamed upload accepted with an expiring token.",
+            importUploadResultSchema,
+          ),
+          "400": jsonResponse("Unsafe path or malformed upload rejected.", errorSchema),
+          "413": jsonResponse("Upload limits exceeded.", errorSchema),
+        },
+      },
+    },
+    "/imports/preview": {
+      post: {
+        operationId: "previewImport",
+        requestBody: jsonBody(importPreviewRequestSchema),
+        responses: {
+          "201": jsonResponse(
+            "Bound no-write import plan with hierarchy and conflicts.",
+            importPreviewResultSchema,
+          ),
+          "400": jsonResponse("Archive is unsafe or malformed.", errorSchema),
+          "410": jsonResponse(
+            "Upload token expired or does not belong to this principal.",
+            errorSchema,
+          ),
+          "413": jsonResponse("Archive expansion limits exceeded.", errorSchema),
+          "422": jsonResponse("Markdown encoding or workspace names are invalid.", errorSchema),
+        },
+      },
+    },
+    "/imports/{planId}/execute": {
+      post: {
+        operationId: "executeImport",
+        parameters: [uuidParameter("planId")],
+        requestBody: jsonBody(executeImportRequestSchema),
+        responses: {
+          "202": jsonResponse("Durable import job accepted idempotently.", acceptedJobSchema),
+          "409": jsonResponse("Plan was already executed or target state changed.", errorSchema),
+          "410": jsonResponse("Plan expired.", errorSchema),
+        },
+      },
+    },
+    "/documents/{id}/download": {
+      get: {
+        operationId: "downloadDocumentMarkdown",
+        parameters: [uuidPathParameter],
+        responses: {
+          "200": {
+            description: "Exact stored raw Markdown.",
+            content: { "text/markdown": { schema: { type: "string", format: "binary" } } },
+          },
+          "404": jsonResponse("Document absent from this workspace.", errorSchema),
+        },
+      },
+    },
+    "/exports": {
+      post: {
+        operationId: "createExport",
+        requestBody: jsonBody(exportRequestSchema),
+        responses: {
+          "202": jsonResponse(
+            "Consistent immutable export snapshot accepted.",
+            createExportResultSchema,
+          ),
+          "400": jsonResponse("Export scope is empty or invalid.", errorSchema),
+          "404": jsonResponse("A scoped resource is absent from this workspace.", errorSchema),
+        },
+      },
+    },
+    "/exports/{jobId}/download": {
+      get: {
+        operationId: "downloadExport",
+        parameters: [
+          uuidParameter("jobId"),
+          {
+            name: "token",
+            in: "query",
+            required: true,
+            schema: { type: "string", minLength: 32, maxLength: 4096 },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Private portable Markdown ZIP.",
+            content: { "application/zip": { schema: { type: "string", format: "binary" } } },
+          },
+          "403": jsonResponse(
+            "Token is invalid, expired or bound to another principal.",
+            errorSchema,
+          ),
+          "404": jsonResponse("Export artifact is absent or expired.", errorSchema),
+          "409": jsonResponse("Export is not ready.", errorSchema),
         },
       },
     },

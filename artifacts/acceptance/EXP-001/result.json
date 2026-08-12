@@ -1,0 +1,11 @@
+{
+  "id": "EXP-001",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/api/integration/portability.integration.spec.ts: safe Content-Disposition and exact current raw Markdown bytes"
+  ],
+  "browser": "Real Chromium downloaded One.md; the downloaded 42 bytes exactly matched the imported source.",
+  "evidence": ["output/playwright/phase6-export-complete.png"],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

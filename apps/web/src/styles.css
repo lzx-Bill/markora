@@ -1445,6 +1445,156 @@ button {
   font-weight: 700;
 }
 
+.heading-actions,
+.import-summary,
+.conflict-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.empty-panel .secondary-action,
+.workspace-empty .secondary-action {
+  margin-top: 8px;
+}
+
+.workspace-empty > small {
+  display: block;
+  margin-top: 10px;
+  color: var(--mk-text-muted);
+}
+
+.import-dialog {
+  width: min(820px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  border: 1px solid var(--mk-border);
+  border-radius: var(--mk-radius-lg);
+  padding: 24px;
+  background: var(--mk-paper);
+  box-shadow: var(--mk-shadow-paper);
+}
+
+.import-dialog > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--mk-border);
+  padding-bottom: 16px;
+}
+
+.import-dialog h2,
+.import-dialog .eyebrow {
+  margin: 0 0 5px;
+}
+
+.import-picker,
+.import-preview {
+  display: grid;
+  gap: 18px;
+  padding-top: 20px;
+}
+
+.file-action {
+  position: relative;
+  cursor: pointer;
+}
+
+.file-action input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.import-summary {
+  flex-wrap: wrap;
+}
+
+.import-summary > * {
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: var(--mk-accent-soft);
+  color: var(--mk-accent);
+  font-size: 12px;
+}
+
+.conflict-controls {
+  justify-content: space-between;
+}
+
+.conflict-controls label {
+  display: grid;
+  gap: 5px;
+  color: var(--mk-text-muted);
+  font-size: 12px;
+}
+
+.conflict-controls select,
+.import-tree select {
+  border: 1px solid var(--mk-border);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--mk-panel);
+  color: var(--mk-text);
+}
+
+.import-tree {
+  max-height: 320px;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.import-tree li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--mk-border);
+  padding: 11px 4px;
+}
+
+.import-tree small,
+.job-tray small,
+.job-tray span {
+  display: block;
+  margin-top: 4px;
+  color: var(--mk-text-muted);
+}
+
+.job-tray {
+  position: fixed;
+  z-index: 50;
+  right: 24px;
+  bottom: 24px;
+  display: grid;
+  width: min(420px, calc(100vw - 32px));
+  gap: 12px;
+  border: 1px solid var(--mk-border);
+  border-radius: var(--mk-radius-md);
+  padding: 18px;
+  background: var(--mk-paper);
+  box-shadow: var(--mk-shadow-paper);
+}
+
+.job-tray progress {
+  width: 100%;
+  accent-color: var(--mk-accent);
+}
+
+.job-tray details ul {
+  max-height: 120px;
+  overflow: auto;
+  margin-bottom: 0;
+  padding-left: 20px;
+  color: var(--mk-danger);
+  font-size: 12px;
+}
+
 @media (max-width: 1279px) {
   .app-shell {
     grid-template-columns: 72px 220px 250px minmax(420px, 1fr);

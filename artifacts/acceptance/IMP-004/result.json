@@ -1,0 +1,12 @@
+{
+  "id": "IMP-004",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/worker/integration/import-export.integration.spec.ts: collision-free Keep Both and write-free Skip terminal item behavior",
+    "packages/portability/src/index.test.ts: portable collision naming"
+  ],
+  "browser": "Import preview defaulted to Keep Both and exposed explicit Skip/Replace overrides.",
+  "evidence": ["output/playwright/phase6-import-conflict-replace.png"],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

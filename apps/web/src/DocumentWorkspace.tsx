@@ -13,6 +13,7 @@ import {
 import { type EditorMode, MarkdownPreview, SourceEditor, WysiwygEditor } from "./MarkdownEditor.js";
 import { buildVersionDiffRows } from "./version-diff.js";
 import {
+  downloadDocumentSource,
   getDocumentVersion,
   getDocumentVersions,
   restoreDocumentVersion,
@@ -265,6 +266,17 @@ export function DocumentWorkspace({
           <SaveIndicator status={status} revision={baseRevision} />
         </div>
         <div className="document-actions">
+          <button
+            type="button"
+            onClick={() => {
+              setEditorFailure(null);
+              void downloadDocumentSource(document.id).catch((error) =>
+                setEditorFailure(error instanceof Error ? error.message : "Download failed."),
+              );
+            }}
+          >
+            Download .md
+          </button>
           <button type="button" onClick={() => setHistoryOpen(true)}>
             History
           </button>

@@ -91,8 +91,8 @@ overwrites the server copy.
 Unsynced Markdown is written first to the versioned `markora-emergency-drafts` IndexedDB database.
 Only a matching server acknowledgement removes it. Reloading with a divergent draft offers
 Review/Restore/Discard; already-open documents remain editable offline, while tree/search and other
-documents are explicitly not advertised as available. Small explicit selections can be downloaded
-locally; durable folder/workspace export remains Phase 6 work.
+documents are explicitly not advertised as available. Single documents use the authenticated raw
+Markdown endpoint; selection, folder and workspace exports use a durable server-side snapshot job.
 
 ## Versions, Trash and deletion worker
 
@@ -124,3 +124,24 @@ The benchmark creates and removes an unlogged 10,000-document table. The accepte
 recorded result are in `docs/adr/0006-postgresql-hybrid-search.md` and
 `artifacts/acceptance/SRCH-003/result.json`. Runtime shortcuts are Ctrl/Cmd+P for Quick Open,
 Ctrl/Cmd+Shift+F for Search and Ctrl/Cmd+K for Command Palette.
+
+## Import, export and portability worker
+
+Use Import Markdown from the workspace toolbar, empty state, drag-and-drop or Command Palette.
+Every upload requires a no-write preview before execution. Keep Both is the default; Skip performs
+no document write and Replace creates a protected version. Closing the modal does not cancel the
+job or close the editor. The background tray exposes monotonic progress, valid-state cancel and
+failed-item-only retry.
+
+Single-document download returns exact stored Markdown. Selection, folder and workspace exports
+capture an immutable database snapshot and produce a private ZIP. The returned download grant is
+bound to the current user/workspace/job and expires after `EXPORT_DOWNLOAD_TTL_MINUTES`.
+
+`IMPORT_UPLOAD_MAX_BYTES`, `IMPORT_MAX_FILES`, `IMPORT_MAX_TOTAL_BYTES`,
+`IMPORT_MAX_COMPRESSION_RATIO`, `IMPORT_UPLOAD_TTL_MINUTES`, `IMPORT_PLAN_TTL_MINUTES`,
+`EXPORT_PATH_MAX_BYTES`, `JOB_ITEM_BATCH_SIZE` and `TEMP_ORPHAN_AGE_MINUTES` control safety and
+retention. `TEMP_ROOT/imports` and `TEMP_ROOT/exports` must be private, writable only by the Markora
+process user and excluded from backups. The Worker removes expired rows/artifacts and old
+unreferenced server-named directories in bounded sweeps.
+Set `MARKORA_ROOT` when processes are launched from different working directories; relative
+`TEMP_ROOT` values otherwise resolve from the package-manager launch root (`INIT_CWD`).

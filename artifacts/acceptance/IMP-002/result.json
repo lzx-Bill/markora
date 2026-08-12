@@ -1,0 +1,12 @@
+{
+  "id": "IMP-002",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/api/integration/portability.integration.spec.ts: direct files and ZIP preview summaries",
+    "apps/web/src/PortabilityCenter.test.tsx: preview-first modal, counts, warnings and conflict controls"
+  ],
+  "browser": "Real Chromium previewed a Markdown file before execution and displayed document/folder/conflict/byte totals and the target.",
+  "evidence": ["output/playwright/phase6-import-preview.png"],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

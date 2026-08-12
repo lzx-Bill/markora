@@ -1,0 +1,14 @@
+{
+  "id": "IMP-008",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/web/src/PortabilityCenter.test.tsx: execution closes modal while durable job tray polls independently"
+  ],
+  "browser": "Real Chromium closed the modal after enqueue, preserved the open document route/editor and later displayed terminal progress.",
+  "evidence": [
+    "output/playwright/phase6-import-preview.png",
+    "output/playwright/phase6-export-complete.png"
+  ],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

@@ -1,3 +1,4 @@
+import { isAbsolute, resolve } from "node:path";
 import { z } from "zod";
 
 const PortSchema = z.coerce.number().int().min(1).max(65535);
@@ -17,6 +18,7 @@ export const ServerConfigSchema = z.object({
   ARGON2_PARALLELISM: z.coerce.number().int().min(1).default(1),
   LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error"]).default("info"),
   TEMP_ROOT: z.string().min(1).default("./tmp"),
+  MARKORA_ROOT: z.string().min(1).optional(),
   WORKSPACE_MAX_DEPTH: z.coerce.number().int().min(1).max(128).default(32),
   WORKSPACE_NAME_MAX_CODE_POINTS: z.coerce.number().int().min(32).max(255).default(255),
   DOCUMENT_MAX_BYTES: z.coerce.number().int().min(1024).default(5_242_880),
@@ -28,9 +30,28 @@ export const ServerConfigSchema = z.object({
   DELETE_BATCH_SIZE: z.coerce.number().int().min(1).max(1000).default(100),
   JOB_LEASE_SECONDS: z.coerce.number().int().min(5).max(3600).default(30),
   WORKER_POLL_MS: z.coerce.number().int().min(100).max(60000).default(1000),
+  JOB_ITEM_BATCH_SIZE: z.coerce.number().int().min(1).max(500).default(25),
+  IMPORT_UPLOAD_MAX_BYTES: z.coerce.number().int().min(1024).default(52_428_800),
+  IMPORT_MAX_FILES: z.coerce.number().int().min(1).max(100_000).default(2_000),
+  IMPORT_MAX_TOTAL_BYTES: z.coerce.number().int().min(1024).default(104_857_600),
+  IMPORT_MAX_COMPRESSION_RATIO: z.coerce.number().min(1).max(10_000).default(100),
+  IMPORT_UPLOAD_TTL_MINUTES: z.coerce.number().int().min(5).max(1440).default(60),
+  IMPORT_PLAN_TTL_MINUTES: z.coerce.number().int().min(5).max(1440).default(30),
+  EXPORT_DOWNLOAD_TTL_MINUTES: z.coerce.number().int().min(5).max(10_080).default(60),
+  EXPORT_PATH_MAX_BYTES: z.coerce.number().int().min(120).max(4096).default(240),
+  TEMP_ORPHAN_AGE_MINUTES: z.coerce.number().int().min(5).max(10_080).default(120),
 });
 
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;
+
+const UploadStorageConfigSchema = ServerConfigSchema.pick({
+  TEMP_ROOT: true,
+  MARKORA_ROOT: true,
+  IMPORT_MAX_FILES: true,
+  IMPORT_UPLOAD_MAX_BYTES: true,
+});
+
+export type UploadStorageConfig = z.infer<typeof UploadStorageConfigSchema>;
 
 export const BootstrapConfigSchema = z.object({
   BOOTSTRAP_ADMIN_USERNAME: z.string().trim().min(3).max(64),
@@ -58,7 +79,29 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv): ServerConfig {
       result.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`),
     );
   }
-  return result.data;
+  const root = environment.MARKORA_ROOT ?? environment.INIT_CWD ?? process.cwd();
+  return {
+    ...result.data,
+    TEMP_ROOT: isAbsolute(result.data.TEMP_ROOT)
+      ? resolve(result.data.TEMP_ROOT)
+      : resolve(root, result.data.TEMP_ROOT),
+  };
+}
+
+export function loadUploadStorageConfig(environment: NodeJS.ProcessEnv): UploadStorageConfig {
+  const result = UploadStorageConfigSchema.safeParse(environment);
+  if (!result.success) {
+    throw new ConfigValidationError(
+      result.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`),
+    );
+  }
+  const root = environment.MARKORA_ROOT ?? environment.INIT_CWD ?? process.cwd();
+  return {
+    ...result.data,
+    TEMP_ROOT: isAbsolute(result.data.TEMP_ROOT)
+      ? resolve(result.data.TEMP_ROOT)
+      : resolve(root, result.data.TEMP_ROOT),
+  };
 }
 
 export function loadBootstrapConfig(environment: NodeJS.ProcessEnv): BootstrapConfig {

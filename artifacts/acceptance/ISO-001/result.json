@@ -1,0 +1,10 @@
+{
+  "id": "ISO-001",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/portability.integration.spec.ts: foreign workspace upload/plan/job/item/export/download IDs and tokens are denied without disclosure",
+    "apps/api/integration/content.integration.spec.ts: content route-family tenancy matrix"
+  ],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

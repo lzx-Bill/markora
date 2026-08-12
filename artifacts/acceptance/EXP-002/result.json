@@ -1,0 +1,12 @@
+{
+  "id": "EXP-002",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/portability.integration.spec.ts: selection/folder/workspace visible hierarchy manifest",
+    "apps/worker/integration/import-export.integration.spec.ts: ZIP contains only mapped Markdown paths and immutable bytes"
+  ],
+  "browser": "Downloaded ZIP listed One.md only; no database IDs or internal metadata were present.",
+  "evidence": ["output/playwright/phase6-export-complete.png"],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

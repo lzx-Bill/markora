@@ -1,0 +1,9 @@
+{
+  "id": "IMP-006",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/worker/integration/import-export.integration.spec.ts: exact succeeded/skipped/failed totals and redacted per-item failure reasons"
+  ],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

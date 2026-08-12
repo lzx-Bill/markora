@@ -1,0 +1,12 @@
+{
+  "id": "IMP-005",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/worker/integration/import-export.integration.spec.ts: Replace snapshots prior Markdown with IMPORT_REPLACE then increments revision",
+    "apps/web/src/PortabilityCenter.test.tsx: Apply to all sends the selected strategy"
+  ],
+  "browser": "Real Chromium applied Replace to all, completed the import and showed Revision 1 with reason import replace in History.",
+  "evidence": ["output/playwright/phase6-import-conflict-replace.png"],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

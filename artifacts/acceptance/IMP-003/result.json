@@ -1,0 +1,11 @@
+{
+  "id": "IMP-003",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "packages/portability/src/index.test.ts: traversal, absolute paths, backslash traversal, depth, symlink, encrypted/duplicate entries, compression ratio, count, entry/total size and invalid UTF-8",
+    "apps/api/integration/portability.integration.spec.ts: malicious archive rejection without workspace writes"
+  ],
+  "fixture": "tests/fixtures/import/cases.json",
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

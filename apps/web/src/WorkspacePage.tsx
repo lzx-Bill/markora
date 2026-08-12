@@ -5,10 +5,10 @@ import type {
   Principal,
 } from "@markora/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { strToU8, zipSync } from "fflate";
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { DocumentWorkspace } from "./DocumentWorkspace.js";
+import { dispatchPortability, PortabilityCenter } from "./PortabilityCenter.js";
 import {
   bulkDocuments,
   createDocument,
@@ -108,10 +108,19 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
       setActionError(null);
       if (command === "new-document") setAction({ kind: "create-document" });
       if (command === "new-folder") setAction({ kind: "create-folder" });
+      if (command === "import") {
+        dispatchPortability({ kind: "import", targetFolderId: selectedFolderId });
+      }
+      if (command === "export-workspace") {
+        dispatchPortability({
+          kind: "export",
+          request: { scope: "workspace", idempotencyKey: crypto.randomUUID() },
+        });
+      }
     };
     window.addEventListener("markora:workspace-command", onCommand);
     return () => window.removeEventListener("markora:workspace-command", onCommand);
-  }, []);
+  }, [selectedFolderId]);
 
   useEffect(() => {
     const onOpenDocument = (event: Event) => {
@@ -132,13 +141,13 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
     return () => window.removeEventListener("markora:open-document", onOpenDocument);
   }, [navigate, unsyncedDocumentId]);
 
-  const invalidateNavigation = async () => {
+  const invalidateNavigation = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["folders", "tree"] }),
       queryClient.invalidateQueries({ queryKey: ["documents"] }),
       queryClient.invalidateQueries({ queryKey: ["document"] }),
     ]);
-  };
+  }, [queryClient]);
 
   const createFolderMutation = useMutation({
     mutationFn: (name: string) => createFolder(selectedFolderId, name),
@@ -339,14 +348,26 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
           <p>{currentFolder ? currentFolder.name : "Workspace root"}</p>
           <div className="panel-heading">
             <h2 id="documents-heading">{documentsQuery.data?.data.length ?? 0} documents</h2>
-            <button
-              className="icon-button accent"
-              type="button"
-              aria-label="Create document"
-              onClick={() => openAction({ kind: "create-document" })}
-            >
-              ＋
-            </button>
+            <span className="heading-actions">
+              <button
+                className="icon-button"
+                type="button"
+                aria-label="Import Markdown"
+                onClick={() =>
+                  dispatchPortability({ kind: "import", targetFolderId: selectedFolderId })
+                }
+              >
+                ⇧
+              </button>
+              <button
+                className="icon-button accent"
+                type="button"
+                aria-label="Create document"
+                onClick={() => openAction({ kind: "create-document" })}
+              >
+                ＋
+              </button>
+            </span>
           </div>
           {currentFolder ? (
             <div className="context-actions" role="toolbar" aria-label="Folder actions">
@@ -368,6 +389,21 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
               >
                 Trash
               </button>
+              <button
+                type="button"
+                onClick={() =>
+                  dispatchPortability({
+                    kind: "export",
+                    request: {
+                      scope: "folder",
+                      folderId: currentFolder.id,
+                      idempotencyKey: crypto.randomUUID(),
+                    },
+                  })
+                }
+              >
+                Export folder
+              </button>
             </div>
           ) : null}
         </div>
@@ -380,15 +416,17 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
             <button
               type="button"
               onClick={() =>
-                downloadSelection(documentsQuery.data?.data ?? [], selectedIds).catch(
-                  (error: unknown) =>
-                    setActionError(
-                      `${error instanceof Error ? error.message : "The download failed."} No documents were changed.`,
-                    ),
-                )
+                dispatchPortability({
+                  kind: "export",
+                  request: {
+                    scope: "selection",
+                    ids: [...selectedIds],
+                    idempotencyKey: crypto.randomUUID(),
+                  },
+                })
               }
             >
-              Download
+              Export
             </button>
             <button type="button" onClick={() => openAction({ kind: "bulk-trash" })}>
               Trash
@@ -415,6 +453,15 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
               onClick={() => openAction({ kind: "create-document" })}
             >
               New Document
+            </button>
+            <button
+              className="secondary-action"
+              type="button"
+              onClick={() =>
+                dispatchPortability({ kind: "import", targetFolderId: selectedFolderId })
+              }
+            >
+              Import Markdown
             </button>
           </div>
         ) : null}
@@ -450,7 +497,22 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
         </ul>
       </aside>
 
-      <main className="work-surface" id="documents">
+      <main
+        className="work-surface"
+        id="documents"
+        onDragOver={(event) => {
+          if (event.dataTransfer.types.includes("Files")) event.preventDefault();
+        }}
+        onDrop={(event) => {
+          if (event.dataTransfer.files.length === 0) return;
+          event.preventDefault();
+          dispatchPortability({
+            kind: "import",
+            files: [...event.dataTransfer.files],
+            targetFolderId: selectedFolderId,
+          });
+        }}
+      >
         {actionError && !action ? (
           <div className="operation-notice" role="alert">
             {actionError}
@@ -488,6 +550,16 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
             >
               ＋ New Document
             </button>
+            <button
+              className="secondary-action"
+              type="button"
+              onClick={() =>
+                dispatchPortability({ kind: "import", targetFolderId: selectedFolderId })
+              }
+            >
+              Import Markdown
+            </button>
+            <small>or drop Markdown files here</small>
           </div>
         ) : null}
       </main>
@@ -545,6 +617,7 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
           }}
         />
       ) : null}
+      <PortabilityCenter onImported={invalidateNavigation} />
     </div>
   );
 
@@ -929,35 +1002,4 @@ function optimisticDocumentRemoval(value: unknown, documentId: string): unknown 
     ...value,
     data: (value.data as DocumentSummary[]).filter((document) => document.id !== documentId),
   };
-}
-
-async function downloadSelection(
-  documents: readonly DocumentSummary[],
-  selectedIds: ReadonlySet<string>,
-) {
-  const selected = documents.filter((document) => selectedIds.has(document.id));
-  const details = await Promise.all(selected.map((document) => getDocument(document.id)));
-  if (details.length === 1 && details[0]) {
-    saveBlob(
-      new Blob([details[0].markdown], { type: "text/markdown;charset=utf-8" }),
-      details[0].name,
-    );
-    return;
-  }
-  const archive = Object.fromEntries(
-    details.map((document) => [document.name, strToU8(document.markdown)]),
-  );
-  const zipped = zipSync(archive);
-  const buffer = new ArrayBuffer(zipped.byteLength);
-  new Uint8Array(buffer).set(zipped);
-  saveBlob(new Blob([buffer], { type: "application/zip" }), "markora-selection.zip");
-}
-
-function saveBlob(blob: Blob, name: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = name;
-  link.click();
-  URL.revokeObjectURL(url);
 }

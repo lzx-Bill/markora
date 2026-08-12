@@ -1,0 +1,11 @@
+{
+  "id": "JOB-001",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/worker/integration/import-export.integration.spec.ts: expired lease reclaim resets only RUNNING item and preserves exactly-once terminal document/version effect",
+    "apps/api/integration/portability.integration.spec.ts: durable enqueue and worker drain across independent service instances"
+  ],
+  "operational": "Real API, web and worker processes were independently restarted during browser acceptance; post-restart PostgreSQL jobs and downloads completed successfully.",
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

@@ -479,7 +479,7 @@ export class TrashService {
 
 export function jobDto(job: {
   id: string;
-  type: "PERMANENT_DELETE_FOLDER" | "PERMANENT_DELETE_DOCUMENT";
+  type: "PERMANENT_DELETE_FOLDER" | "PERMANENT_DELETE_DOCUMENT" | "IMPORT" | "EXPORT";
   state:
     | "PENDING"
     | "RUNNING"
@@ -492,20 +492,55 @@ export function jobDto(job: {
   targetId: string;
   progress: number;
   errorCode: string | null;
+  checkpoint?: unknown;
+  result?: unknown;
+  parentJobId?: string | null;
+  cancellationRequested?: boolean;
   createdAt: Date;
   startedAt: Date | null;
   completedAt: Date | null;
 }) {
+  const checkpoint = recordValue(job.checkpoint);
+  const completed = integerValue(checkpoint.completed) ?? job.progress;
+  const total = integerValue(checkpoint.total) ?? 100;
   return {
     id: job.id,
     type: job.type,
     state: job.state,
-    targetType: job.targetType as "folder" | "document",
+    targetType: job.targetType as "folder" | "document" | "import-plan" | "export",
     targetId: job.targetId,
     progress: job.progress,
+    progressDetail: {
+      completed,
+      total,
+      currentItem: typeof checkpoint.currentItem === "string" ? checkpoint.currentItem : null,
+      phase:
+        typeof checkpoint.phase === "string"
+          ? checkpoint.phase
+          : job.type.startsWith("PERMANENT_DELETE")
+            ? "deleting"
+            : "queued",
+    },
+    result: nullableRecord(job.result),
     errorCode: job.errorCode,
+    parentJobId: job.parentJobId ?? null,
+    cancellationRequested: job.cancellationRequested ?? false,
     createdAt: job.createdAt.toISOString(),
     startedAt: job.startedAt?.toISOString() ?? null,
     completedAt: job.completedAt?.toISOString() ?? null,
   };
+}
+
+function recordValue(value: unknown): Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function nullableRecord(value: unknown): Record<string, unknown> | null {
+  return value === null || value === undefined ? null : recordValue(value);
+}
+
+function integerValue(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
 }

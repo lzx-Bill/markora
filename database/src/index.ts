@@ -6,7 +6,13 @@ export type {
   Document,
   DocumentSaveReceipt,
   DocumentVersion,
+  ExportArtifact,
+  ExportManifest,
+  ExportManifestItem,
   Folder,
+  ImportPlan,
+  ImportUpload,
+  JobItem,
 } from "../generated/client/client.js";
 export { Prisma } from "../generated/client/client.js";
 export {
@@ -14,6 +20,7 @@ export {
   BackgroundJobState,
   BackgroundJobType,
   DocumentVersionReason,
+  JobItemState,
   ResourceState,
   UserRole,
   UserStatus,

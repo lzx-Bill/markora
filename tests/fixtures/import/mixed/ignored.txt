@@ -1,0 +1,1 @@
+This non-Markdown fixture must be counted once and ignored.

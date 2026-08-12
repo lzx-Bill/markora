@@ -1,0 +1,9 @@
+{
+  "id": "IMP-007",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/portability.integration.spec.ts: retry child contains failed source keys only and excludes successful/skipped keys across descendant retries"
+  ],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

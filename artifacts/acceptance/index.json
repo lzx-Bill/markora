@@ -1,6 +1,6 @@
 {
-  "phase": 5,
-  "generatedAt": "2026-08-13T00:06:00+08:00",
+  "phase": 6,
+  "generatedAt": "2026-08-13T01:08:00+08:00",
   "requirements": {
     "FOL-001": "FOL-001/result.json",
     "FOL-002": "FOL-002/result.json",
@@ -32,6 +32,23 @@
     "ERR-001": "ERR-001/result.json",
     "SRCH-001": "SRCH-001/result.json",
     "SRCH-002": "SRCH-002/result.json",
-    "SRCH-003": "SRCH-003/result.json"
+    "SRCH-003": "SRCH-003/result.json",
+    "IMP-001": "IMP-001/result.json",
+    "IMP-002": "IMP-002/result.json",
+    "IMP-003": "IMP-003/result.json",
+    "IMP-004": "IMP-004/result.json",
+    "IMP-005": "IMP-005/result.json",
+    "IMP-006": "IMP-006/result.json",
+    "IMP-007": "IMP-007/result.json",
+    "IMP-008": "IMP-008/result.json",
+    "EXP-001": "EXP-001/result.json",
+    "EXP-002": "EXP-002/result.json",
+    "EXP-003": "EXP-003/result.json",
+    "EXP-004": "EXP-004/result.json",
+    "EXP-005": "EXP-005/result.json",
+    "JOB-001": "JOB-001/result.json",
+    "JOB-002": "JOB-002/result.json",
+    "ISO-001": "ISO-001/result.json",
+    "ISO-002": "ISO-002/result.json"
   }
 }

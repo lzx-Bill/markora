@@ -38,6 +38,8 @@ enum DocumentVersionReason {
 enum BackgroundJobType {
   PERMANENT_DELETE_FOLDER
   PERMANENT_DELETE_DOCUMENT
+  IMPORT
+  EXPORT
 }
 
 enum BackgroundJobState {
@@ -48,6 +50,15 @@ enum BackgroundJobState {
   FAILED
   CANCELLED
   INTERRUPTED
+}
+
+enum JobItemState {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  SKIPPED
+  FAILED
+  CANCELLED
 }
 
 model User {
@@ -67,7 +78,9 @@ model User {
   sessions           Session[]
   auditEvents        AuditEvent[]      @relation("AuditActor")
   documentVersions   DocumentVersion[]
-  backgroundJobs    BackgroundJob[]
+  backgroundJobs     BackgroundJob[]
+  importUploads      ImportUpload[]      @relation("ImportUploadOwner")
+  importPlans        ImportPlan[]        @relation("ImportPlanOwner")
 
   @@map("users")
 }
@@ -82,6 +95,8 @@ model Workspace {
   documents        Document[]
   documentVersions DocumentVersion[]
   backgroundJobs   BackgroundJob[]
+  importUploads    ImportUpload[]
+  importPlans      ImportPlan[]
 
   @@map("workspaces")
 }
@@ -186,9 +201,13 @@ model BackgroundJob {
   targetType     String             @map("target_type")
   targetId       String             @map("target_id") @db.Uuid
   progress       Int                @default(0)
+  payload        Json               @default("{}") @map("payload_json") @db.JsonB
   checkpoint     Json               @default("{}") @map("checkpoint_json") @db.JsonB
   result         Json?              @map("result_json") @db.JsonB
   errorCode      String?            @map("error_code")
+  idempotencyKey String?            @map("idempotency_key")
+  parentJobId    String?            @map("parent_job_id") @db.Uuid
+  cancellationRequested Boolean     @default(false) @map("cancellation_requested")
   attempts       Int                @default(0)
   runAfter       DateTime           @default(now()) @map("run_after") @db.Timestamptz(3)
   leaseOwner     String?            @map("lease_owner")
@@ -199,11 +218,115 @@ model BackgroundJob {
   updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
   workspace      Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   owner          User               @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
+  parentJob      BackgroundJob?     @relation("JobRetryLineage", fields: [parentJobId], references: [id], onDelete: SetNull)
+  retryJobs      BackgroundJob[]    @relation("JobRetryLineage")
+  items          JobItem[]
+  exportManifest ExportManifest?
+  exportArtifact ExportArtifact?
 
+  @@unique([ownerUserId, type, idempotencyKey])
   @@index([state, runAfter, leaseExpiresAt])
   @@index([workspaceId, createdAt(sort: Desc)])
   @@index([workspaceId, targetType, targetId])
   @@map("background_jobs")
+}
+
+model JobItem {
+  id         String       @id @default(uuid()) @db.Uuid
+  jobId      String       @map("job_id") @db.Uuid
+  sourceKey  String       @map("source_key")
+  state      JobItemState @default(PENDING)
+  payload    Json         @default("{}") @map("payload_json") @db.JsonB
+  result     Json?        @map("result_json") @db.JsonB
+  errorCode  String?      @map("error_code")
+  attempts   Int          @default(0)
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  job        BackgroundJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, sourceKey])
+  @@index([jobId, state, createdAt])
+  @@map("job_items")
+}
+
+model ImportUpload {
+  id           String       @id @default(uuid()) @db.Uuid
+  workspaceId  String       @map("workspace_id") @db.Uuid
+  ownerUserId  String       @map("owner_user_id") @db.Uuid
+  tokenHash    String       @unique @map("token_hash")
+  tempPath     String       @map("temp_path")
+  manifestHash String       @map("manifest_hash")
+  manifest     Json         @map("manifest_json") @db.JsonB
+  expiresAt    DateTime     @map("expires_at") @db.Timestamptz(3)
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner        User         @relation("ImportUploadOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  plans        ImportPlan[]
+
+  @@index([expiresAt])
+  @@index([workspaceId, ownerUserId])
+  @@map("import_uploads")
+}
+
+model ImportPlan {
+  id             String       @id @default(uuid()) @db.Uuid
+  uploadId       String       @map("upload_id") @db.Uuid
+  workspaceId    String       @map("workspace_id") @db.Uuid
+  ownerUserId    String       @map("owner_user_id") @db.Uuid
+  targetFolderId String?      @map("target_folder_id") @db.Uuid
+  manifestHash   String       @map("manifest_hash")
+  preview        Json         @map("preview_json") @db.JsonB
+  expiresAt      DateTime     @map("expires_at") @db.Timestamptz(3)
+  executedJobId  String?      @unique @map("executed_job_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  upload         ImportUpload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner          User         @relation("ImportPlanOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([workspaceId, ownerUserId])
+  @@map("import_plans")
+}
+
+model ExportManifest {
+  id        String               @id @default(uuid()) @db.Uuid
+  jobId     String               @unique @map("job_id") @db.Uuid
+  scope     String
+  report    Json                 @default("{}") @map("report_json") @db.JsonB
+  createdAt DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  job       BackgroundJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  items     ExportManifestItem[]
+
+  @@map("export_manifests")
+}
+
+model ExportManifestItem {
+  id               String         @id @default(uuid()) @db.Uuid
+  manifestId       String         @map("manifest_id") @db.Uuid
+  sourceDocumentId String         @map("source_document_id") @db.Uuid
+  displayPath      String         @map("display_path")
+  archivePath      String         @map("archive_path")
+  markdown         String
+  sourceRevision   Int            @map("source_revision")
+  normalized       Boolean        @default(false)
+  manifest         ExportManifest @relation(fields: [manifestId], references: [id], onDelete: Cascade)
+
+  @@unique([manifestId, archivePath])
+  @@index([manifestId, id])
+  @@map("export_manifest_items")
+}
+
+model ExportArtifact {
+  id        String        @id @default(uuid()) @db.Uuid
+  jobId     String        @unique @map("job_id") @db.Uuid
+  filePath  String        @map("file_path")
+  byteSize  BigInt        @map("byte_size")
+  expiresAt DateTime      @map("expires_at") @db.Timestamptz(3)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  job       BackgroundJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("export_artifacts")
 }
 
 model Session {

@@ -1,0 +1,12 @@
+{
+  "id": "EXP-005",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "apps/api/integration/portability.integration.spec.ts: HMAC expiry and owner/workspace/job binding with current authorization recheck",
+    "apps/worker/integration/import-export.integration.spec.ts: expired artifact and bounded orphan cleanup"
+  ],
+  "browser": "Real API/web/worker processes sharing a normalized private TEMP_ROOT produced and downloaded the archive; browser console reported zero errors.",
+  "evidence": ["output/playwright/phase6-export-complete.png"],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

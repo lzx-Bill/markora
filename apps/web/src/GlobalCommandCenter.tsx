@@ -8,7 +8,7 @@ type OverlayMode = "quick-open" | "commands";
 
 interface CommandItem {
   readonly id: string;
-  readonly group: "Navigation" | "Create" | "Editor";
+  readonly group: "Navigation" | "Create" | "Editor" | "Portability";
   readonly label: string;
   readonly detail: string;
   readonly run: () => void;
@@ -115,6 +115,20 @@ export function GlobalCommandCenter({ principal }: { readonly principal: Princip
           label: "Create folder",
           detail: "In the selected folder",
           run: () => dispatchWorkspaceCommand("new-folder"),
+        },
+        {
+          id: "import",
+          group: "Portability",
+          label: "Import Markdown",
+          detail: "Files, folders or a ZIP archive",
+          run: () => dispatchWorkspaceCommand("import"),
+        },
+        {
+          id: "export-workspace",
+          group: "Portability",
+          label: "Export workspace",
+          detail: "Portable Markdown hierarchy",
+          run: () => dispatchWorkspaceCommand("export-workspace"),
         },
       );
     }
@@ -283,7 +297,9 @@ function QuickOpenResults({
   ));
 }
 
-function dispatchWorkspaceCommand(command: "new-document" | "new-folder") {
+function dispatchWorkspaceCommand(
+  command: "new-document" | "new-folder" | "import" | "export-workspace",
+) {
   window.dispatchEvent(new CustomEvent("markora:workspace-command", { detail: command }));
 }
 

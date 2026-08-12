@@ -1,0 +1,13 @@
+{
+  "id": "JOB-002",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/worker/integration/import-export.integration.spec.ts: checkpoint-derived monotonic progress",
+    "apps/api/integration/portability.integration.spec.ts: cancellation state transitions",
+    "apps/web/src/PortabilityCenter.test.tsx: Cancel, Retry failed and Download render only in valid states"
+  ],
+  "browser": "Real Chromium displayed terminal 1/1 and 100% progress with Download ZIP and Close only after success.",
+  "evidence": ["output/playwright/phase6-export-complete.png"],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}

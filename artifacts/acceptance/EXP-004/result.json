@@ -1,0 +1,10 @@
+{
+  "id": "EXP-004",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "packages/portability/src/index.test.ts: reserved names, illegal characters, trailing dots/spaces, length budgets and case-insensitive archive collisions",
+    "apps/api/integration/portability.integration.spec.ts: mappings are reported while database names remain unchanged"
+  ],
+  "verifiedAt": "2026-08-13T01:08:00+08:00"
+}
