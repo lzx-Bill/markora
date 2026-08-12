@@ -1,0 +1,8 @@
+{
+  "id": "UI-001",
+  "status": "passed",
+  "priority": "P1",
+  "browser": "Real production-image Chromium at 1600x900 verified the four-zone rail, folder tree, document list and paper editor hierarchy.",
+  "evidence": ["output/playwright/phase8-desktop-light.png"],
+  "verifiedAt": "2026-08-13T03:00:00+08:00"
+}

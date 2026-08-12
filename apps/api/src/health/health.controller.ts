@@ -1,6 +1,7 @@
 import type { HealthResponse } from "@markora/contracts";
 import { Controller, Get, Inject, ServiceUnavailableException } from "@nestjs/common";
 import { PublicRoute } from "../auth/public.decorator.js";
+import { CodedHttpException } from "../http/coded-http.exception.js";
 import { HealthService } from "./health.service.js";
 
 @Controller("health")
@@ -18,7 +19,8 @@ export class HealthController {
   public async readiness(): Promise<HealthResponse> {
     try {
       return await this.healthService.readiness();
-    } catch {
+    } catch (error) {
+      if (error instanceof CodedHttpException) throw error;
       throw new ServiceUnavailableException("A required dependency is unavailable.");
     }
   }

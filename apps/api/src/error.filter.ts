@@ -44,6 +44,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     response
       .status(status)
       .header("x-request-id", requestId)
+      .header("x-error-code", code)
       .json(
         createApiError(
           code,

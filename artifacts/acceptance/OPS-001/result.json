@@ -1,0 +1,16 @@
+{
+  "id": "OPS-001",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "packages/config/src/release-infra.test.ts: pinned topology and private-database assertions"
+  ],
+  "operational": {
+    "stack": "markora-phase8",
+    "services": "PostgreSQL healthy; migration exited 0; API/Web/Worker/Proxy healthy",
+    "ports": "only Caddy published 28180/28443 during isolated rehearsal; PostgreSQL published none",
+    "network": "markora-phase8_backend internal=true",
+    "runtime": "application user markora, read-only root, all capabilities dropped"
+  },
+  "verifiedAt": "2026-08-13T03:00:00+08:00"
+}

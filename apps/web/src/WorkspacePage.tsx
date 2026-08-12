@@ -76,6 +76,9 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
       : null,
   );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [mobilePane, setMobilePane] = useState<"folders" | "documents" | "editor">(
+    documentId ? "editor" : "documents",
+  );
   const [action, setAction] = useState<Action | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [unsyncedDocumentId, setUnsyncedDocumentId] = useState<string | null>(null);
@@ -123,6 +126,7 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
     if (documentQuery.data) {
       setSelectedFolderId(documentQuery.data.folderId);
       setSelectedIds(new Set());
+      setMobilePane("editor");
     }
   }, [documentQuery.data]);
 
@@ -314,13 +318,38 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
 
   const currentFolder = folders.find((folder) => folder.id === selectedFolderId);
   return (
-    <div className="app-shell">
+    <div className={`app-shell workspace-shell mobile-pane-${mobilePane}`}>
       <GlobalRail
         principal={principal}
         onLogout={onLogout}
         current="documents"
         onNewDocument={() => openAction({ kind: "create-document" })}
       />
+      <nav className="mobile-pane-tabs" aria-label="Workspace panes">
+        <button
+          type="button"
+          aria-current={mobilePane === "folders" ? "page" : undefined}
+          onClick={() => setMobilePane("folders")}
+        >
+          Folders
+        </button>
+        <button
+          type="button"
+          aria-current={mobilePane === "documents" ? "page" : undefined}
+          onClick={() => setMobilePane("documents")}
+        >
+          Documents
+        </button>
+        {documentId ? (
+          <button
+            type="button"
+            aria-current={mobilePane === "editor" ? "page" : undefined}
+            onClick={() => setMobilePane("editor")}
+          >
+            Editor
+          </button>
+        ) : null}
+      </nav>
       <aside className="folder-drawer panel" aria-labelledby="folders-heading">
         <div className="panel-heading">
           <h2 id="folders-heading">My Documents</h2>
@@ -667,6 +696,7 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
       else localStorage.removeItem("markora.last-folder.v1");
     }
     setSelectedIds(new Set());
+    setMobilePane("documents");
   }
 
   function navigateToDocument(id: string) {
@@ -679,6 +709,7 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
     ) {
       return;
     }
+    setMobilePane("editor");
     navigate(`/documents/${id}`);
   }
 }

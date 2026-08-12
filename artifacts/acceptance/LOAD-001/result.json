@@ -1,0 +1,12 @@
+{
+  "id": "LOAD-001",
+  "status": "passed",
+  "priority": "P2",
+  "disposition": "implemented",
+  "automated": [
+    "apps/web/src/WorkspacePage.tsx: folder and document queries render scoped loading/error states",
+    "apps/web/src/App.test.tsx: application shell state coverage"
+  ],
+  "browser": "Real Chromium kept the open editor mounted while folder/document panes were switched at 390x844.",
+  "verifiedAt": "2026-08-13T03:00:00+08:00"
+}

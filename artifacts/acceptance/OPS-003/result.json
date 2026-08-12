@@ -1,0 +1,13 @@
+{
+  "id": "OPS-003",
+  "status": "passed",
+  "priority": "P0",
+  "operational": {
+    "emptyToCurrent": "isolated production volume applied 11 migrations and bootstrap created one administrator/workspace",
+    "previousToCurrent": "b0a06c4 schema applied 10 migrations, then current applied phase 7 migration; representative document hash stayed a0c1a3e71abee85429f319cb33febf6b",
+    "backupRestore": "custom dump checksum passed; isolated markora_restore_drill matched source counts users=1, workspaces=1, migrations=11",
+    "workerRestart": "worker started_at and seen_at changed after restart while the service returned healthy"
+  },
+  "documentation": "docs/OPERATIONS.md",
+  "verifiedAt": "2026-08-13T03:00:00+08:00"
+}

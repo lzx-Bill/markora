@@ -5,6 +5,7 @@ import { json } from "express";
 import { AppModule } from "./app.module.js";
 import { ApiExceptionFilter } from "./error.filter.js";
 import { requestIdMiddleware } from "./http/request-id.middleware.js";
+import { requestLogMiddleware } from "./http/request-log.middleware.js";
 
 export async function createApplication(): Promise<INestApplication> {
   const config = loadServerConfig(process.env);
@@ -14,6 +15,7 @@ export async function createApplication(): Promise<INestApplication> {
     json({ limit: Math.max(config.DOCUMENT_MAX_BYTES, runtimeDocumentCeiling) * 2 + 65_536 }),
   );
   app.use(requestIdMiddleware);
+  app.use(requestLogMiddleware);
   app.useGlobalFilters(new ApiExceptionFilter());
   app.setGlobalPrefix("api/v1");
   app.enableShutdownHooks();

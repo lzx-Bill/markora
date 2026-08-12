@@ -23,8 +23,9 @@ $env:DATABASE_URL = "postgresql://markora:markora@localhost:27185/markora?schema
 pnpm db:migrate
 ```
 
-The development Compose file binds PostgreSQL only to loopback. Production topology and reverse
-proxy hardening are completed in Phase 8; PostgreSQL must not expose a production host port.
+The development Compose file binds PostgreSQL only to loopback. Production uses
+`infra/docker/compose.yaml`: Caddy is the only host-facing service and PostgreSQL has no published
+port. See `docs/OPERATIONS.md`.
 
 ## Run
 
@@ -106,7 +107,7 @@ or enable Keep Both to allocate a deterministic sibling name. Permanent deletion
 the root unavailable and queues a durable job. `DELETE_BATCH_SIZE`, `JOB_LEASE_SECONDS`, and
 `WORKER_POLL_MS` bound and schedule processing; expired leases are safe to reclaim after restart.
 App-level deletion does not remove existing database backups; production must apply the Phase 8
-backup retention and restore-runbook controls.
+backup retention and restore-runbook controls in `docs/OPERATIONS.md`.
 
 ## Search benchmark
 

@@ -6,10 +6,10 @@
   --mk-panel-strong: #fffefb;
   --mk-paper: #fffefa;
   --mk-text: #282b32;
-  --mk-text-muted: #737881;
+  --mk-text-muted: #686e77;
   --mk-border: rgb(70 72 78 / 12%);
   --mk-border-strong: rgb(70 72 78 / 19%);
-  --mk-accent: #355cff;
+  --mk-accent: #3154ea;
   --mk-accent-soft: #edf0ff;
   --mk-success: #198754;
   --mk-danger: #c53838;
@@ -31,7 +31,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
     --mk-canvas: #17191d;
     --mk-canvas-grid: rgb(255 255 255 / 3%);

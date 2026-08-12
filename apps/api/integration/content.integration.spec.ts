@@ -332,6 +332,32 @@ describe("Phase 3 revision-guarded document editing", () => {
     );
   });
 
+  it("serializes concurrent saves to one document without losing a revision", async () => {
+    const { agent } = await authenticatedWorkspace();
+    const document = await createDocument(agent, null, "Concurrent.md", "initial");
+
+    const responses = await Promise.all(
+      ["writer one", "writer two"].map((markdown) =>
+        agent
+          .put(`/api/v1/documents/${document.id}/content`)
+          .set("Origin", origin)
+          .send({ markdown, baseRevision: 1, clientMutationId: randomUUID() }),
+      ),
+    );
+
+    expect(responses.map(({ status }) => status).sort()).toEqual([200, 409]);
+    expect(responses.find(({ status }) => status === 409)?.body.error.code).toBe(
+      "REVISION_CONFLICT",
+    );
+    const persisted = await database.document.findUniqueOrThrow({ where: { id: document.id } });
+    expect(persisted.revision).toBe(2);
+    expect(["writer one", "writer two"]).toContain(persisted.markdown);
+    expect(await database.documentVersion.count({ where: { documentId: document.id } })).toBe(1);
+    expect(await database.documentSaveReceipt.count({ where: { documentId: document.id } })).toBe(
+      1,
+    );
+  });
+
   it("protects conflict overwrite with a version snapshot and rejects cross-workspace saves", async () => {
     const { agent } = await authenticatedWorkspace();
     const document = await createDocument(agent, null, "Resolution.md", "server current");

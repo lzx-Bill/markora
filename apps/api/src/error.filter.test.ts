@@ -8,8 +8,9 @@ describe("ApiExceptionFilter", () => {
 
   it("maps body-parser payload limits to the safe 413 contract", () => {
     const json = vi.fn();
-    const header = vi.fn().mockReturnValue({ json });
-    const status = vi.fn().mockReturnValue({ header });
+    const chain = { json, header: vi.fn() };
+    chain.header.mockReturnValue(chain);
+    const status = vi.fn().mockReturnValue(chain);
     const host = {
       switchToHttp: () => ({
         getRequest: () => ({ header: () => undefined }),

@@ -25,6 +25,7 @@ export {
   UserRole,
   UserStatus,
 } from "../generated/client/enums.js";
+export { CURRENT_MIGRATION } from "./migrations.js";
 
 export type DatabaseClient = InstanceType<typeof PrismaClient>;
 

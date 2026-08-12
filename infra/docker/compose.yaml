@@ -1,0 +1,145 @@
+name: markora
+
+x-app-environment: &app-environment
+  NODE_ENV: production
+  MARKORA_VERSION: ${MARKORA_VERSION:-0.1.0-rc.1}
+  PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN to the externally visible HTTPS origin}
+  DATABASE_URL: postgresql://${POSTGRES_USER:-markora}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-markora}?schema=public
+  SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET to at least 32 random characters}
+  API_HOST: 0.0.0.0
+  API_PORT: "27184"
+  WEB_HOST: 0.0.0.0
+  WEB_PORT: "27183"
+  TEMP_ROOT: /var/lib/markora/tmp
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+
+x-app-image: &app-image
+  image: ${MARKORA_IMAGE:-markora:local}
+  restart: unless-stopped
+  networks: [backend]
+  environment: *app-environment
+  read_only: true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  volumes:
+    - markora-temp:/var/lib/markora/tmp
+  security_opt:
+    - no-new-privileges:true
+  cap_drop: [ALL]
+
+services:
+  postgres:
+    image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+    restart: unless-stopped
+    networks: [backend]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-markora}
+      POSTGRES_USER: ${POSTGRES_USER:-markora}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - backup-data:/backups
+      - ../scripts:/opt/markora/scripts:ro
+    security_opt:
+      - no-new-privileges:true
+
+  migrate:
+    <<: *app-image
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+    restart: "no"
+    command: ["pnpm", "db:migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *app-image
+    command: ["pnpm", "--filter", "@markora/api", "start"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:27184/api/v1/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  worker:
+    <<: *app-image
+    command: ["pnpm", "--filter", "@markora/worker", "start"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    <<: *app-image
+    command: ["pnpm", "--filter", "@markora/web", "preview"]
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /opt/markora/apps/web/node_modules/.vite-temp:size=16m,mode=0755,uid=10001,gid=10001
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:27183/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  proxy:
+    image: caddy:2.10.2-alpine@sha256:d8c17a862962def15cde69863a3a463f25a2664942eafd7bdbf050e9c3116b83
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    networks: [backend, edge]
+    environment:
+      MARKORA_SITE_ADDRESS: ${MARKORA_SITE_ADDRESS:-http://localhost}
+    ports:
+      - "${MARKORA_HTTP_PORT:-27180}:80"
+      - "${MARKORA_HTTPS_PORT:-27443}:443"
+    volumes:
+      - ../reverse-proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+      - /run:size=8m,mode=0755
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+
+networks:
+  backend:
+    internal: true
+  edge: {}
+
+volumes:
+  postgres-data:
+  markora-temp:
+  backup-data:
+  caddy-data:
+  caddy-config:

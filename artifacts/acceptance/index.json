@@ -1,6 +1,6 @@
 {
-  "phase": 7,
-  "generatedAt": "2026-08-13T01:53:00+08:00",
+  "phase": 8,
+  "generatedAt": "2026-08-13T03:00:00+08:00",
   "requirements": {
     "FOL-001": "FOL-001/result.json",
     "FOL-002": "FOL-002/result.json",
@@ -57,6 +57,16 @@
     "ADM-003": "ADM-003/result.json",
     "ADM-004": "ADM-004/result.json",
     "ADM-005": "ADM-005/result.json",
-    "AUD-001": "AUD-001/result.json"
+    "AUD-001": "AUD-001/result.json",
+    "LOAD-001": "LOAD-001/result.json",
+    "UI-001": "UI-001/result.json",
+    "UI-002": "UI-002/result.json",
+    "UI-003": "UI-003/result.json",
+    "A11Y-001": "A11Y-001/result.json",
+    "OPS-001": "OPS-001/result.json",
+    "OPS-002": "OPS-002/result.json",
+    "OPS-003": "OPS-003/result.json",
+    "OBS-001": "OBS-001/result.json",
+    "PERF-001": "PERF-001/result.json"
   }
 }

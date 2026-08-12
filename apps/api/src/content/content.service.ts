@@ -384,47 +384,125 @@ export class ContentService {
     }
     const markdownHash = createHash("sha256").update(input.markdown).digest("hex");
     try {
-      return await this.database.client.$transaction(
-        async (transaction) => {
-          const current = await transaction.document.findFirst({
-            where: {
-              id: documentId,
-              workspaceId: principal.workspaceId,
-              state: ResourceState.ACTIVE,
-            },
-          });
-          if (!current) this.throwNotFound("Document");
-          const folders = await visibleFolders(transaction, principal.workspaceId);
-          if (current.folderId && !folders.some((folder) => folder.id === current.folderId)) {
-            this.throwNotFound("Document");
-          }
-
-          const existingReceipt = await transaction.documentSaveReceipt.findUnique({
-            where: {
-              documentId_clientMutationId: {
-                documentId,
-                clientMutationId: input.clientMutationId,
+      return await retrySerializable(() =>
+        this.database.client.$transaction(
+          async (transaction) => {
+            // One document is the concurrency unit. This avoids workspace-wide Serializable
+            // predicate conflicts while preserving the conditional revision contract.
+            await transaction.$executeRaw`
+              SELECT pg_advisory_xact_lock(hashtextextended(${documentId}, 0))
+            `;
+            const current = await transaction.document.findFirst({
+              where: {
+                id: documentId,
+                workspaceId: principal.workspaceId,
+                state: ResourceState.ACTIVE,
               },
-            },
-          });
-          if (existingReceipt) {
-            if (
-              existingReceipt.workspaceId !== principal.workspaceId ||
-              existingReceipt.baseRevision !== input.baseRevision ||
-              existingReceipt.markdownHash !== markdownHash
-            ) {
-              throw new CodedHttpException(
-                "RESOURCE_STATE_CONFLICT",
-                "This save identifier was already used for different content.",
-                409,
-              );
+            });
+            if (!current) this.throwNotFound("Document");
+            if (current.folderId) {
+              const folders = await visibleFolders(transaction, principal.workspaceId);
+              if (!folders.some((folder) => folder.id === current.folderId)) {
+                this.throwNotFound("Document");
+              }
             }
-            return saveResult(existingReceipt);
-          }
 
-          if (current.revision !== input.baseRevision) this.throwRevisionConflict(current);
-          const savedAt = new Date();
-          if (current.markdown === input.markdown) {
+            const existingReceipt = await transaction.documentSaveReceipt.findUnique({
+              where: {
+                documentId_clientMutationId: {
+                  documentId,
+                  clientMutationId: input.clientMutationId,
+                },
+              },
+            });
+            if (existingReceipt) {
+              if (
+                existingReceipt.workspaceId !== principal.workspaceId ||
+                existingReceipt.baseRevision !== input.baseRevision ||
+                existingReceipt.markdownHash !== markdownHash
+              ) {
+                throw new CodedHttpException(
+                  "RESOURCE_STATE_CONFLICT",
+                  "This save identifier was already used for different content.",
+                  409,
+                );
+              }
+              return saveResult(existingReceipt);
+            }
+
+            if (current.revision !== input.baseRevision) this.throwRevisionConflict(current);
+            const savedAt = new Date();
+            if (current.markdown === input.markdown) {
+              const receipt = await transaction.documentSaveReceipt.create({
+                data: {
+                  documentId,
+                  workspaceId: principal.workspaceId,
+                  clientMutationId: input.clientMutationId,
+                  baseRevision: input.baseRevision,
+                  markdownHash,
+                  resultRevision: current.revision,
+                  versionCreated: false,
+                  savedAt,
+                },
+              });
+              await this.audit(
+                transaction,
+                principal,
+                "document.save.noop",
+                "document",
+                documentId,
+                requestId,
+                { revision: current.revision, clientMutationId: input.clientMutationId },
+              );
+              return saveResult(receipt);
+            }
+
+            const latestVersion = await transaction.documentVersion.findFirst({
+              where: { documentId, workspaceId: principal.workspaceId },
+              orderBy: { versionNo: "desc" },
+            });
+            const snapshotCutoff = new Date(
+              savedAt.getTime() - this.config.VERSION_SNAPSHOT_INTERVAL_MINUTES * 60_000,
+            );
+            const versionCreated =
+              input.conflictResolution === "OVERWRITE_SERVER" ||
+              !latestVersion ||
+              latestVersion.createdAt <= snapshotCutoff;
+            if (versionCreated) {
+              await transaction.documentVersion.create({
+                data: {
+                  documentId,
+                  workspaceId: principal.workspaceId,
+                  versionNo: (latestVersion?.versionNo ?? 0) + 1,
+                  markdown: current.markdown,
+                  documentName: current.name,
+                  reason:
+                    input.conflictResolution === "OVERWRITE_SERVER"
+                      ? DocumentVersionReason.CONFLICT_OVERWRITE
+                      : DocumentVersionReason.AUTO_SAVE,
+                  sourceRevision: current.revision,
+                  actorId: principal.userId,
+                  createdAt: savedAt,
+                },
+              });
+            }
+
+            const updated = await transaction.document.updateMany({
+              where: {
+                id: documentId,
+                workspaceId: principal.workspaceId,
+                state: ResourceState.ACTIVE,
+                revision: input.baseRevision,
+              },
+              data: { markdown: input.markdown, revision: { increment: 1 }, updatedAt: savedAt },
+            });
+            if (updated.count !== 1) {
+              const latest = await transaction.document.findFirst({
+                where: { id: documentId, workspaceId: principal.workspaceId },
+              });
+              if (!latest) this.throwNotFound("Document");
+              this.throwRevisionConflict(latest);
+            }
             const receipt = await transaction.documentSaveReceipt.create({
               data: {
                 documentId,
@@ -432,100 +510,31 @@ export class ContentService {
                 clientMutationId: input.clientMutationId,
                 baseRevision: input.baseRevision,
                 markdownHash,
-                resultRevision: current.revision,
-                versionCreated: false,
+                resultRevision: input.baseRevision + 1,
+                versionCreated,
                 savedAt,
               },
             });
             await this.audit(
               transaction,
               principal,
-              "document.save.noop",
+              "document.save",
               "document",
               documentId,
               requestId,
-              { revision: current.revision, clientMutationId: input.clientMutationId },
+              {
+                baseRevision: input.baseRevision,
+                revision: input.baseRevision + 1,
+                bytes: Buffer.byteLength(input.markdown, "utf8"),
+                versionCreated,
+                conflictResolution: input.conflictResolution ?? null,
+                clientMutationId: input.clientMutationId,
+              },
             );
             return saveResult(receipt);
-          }
-
-          const latestVersion = await transaction.documentVersion.findFirst({
-            where: { documentId, workspaceId: principal.workspaceId },
-            orderBy: { versionNo: "desc" },
-          });
-          const snapshotCutoff = new Date(
-            savedAt.getTime() - this.config.VERSION_SNAPSHOT_INTERVAL_MINUTES * 60_000,
-          );
-          const versionCreated =
-            input.conflictResolution === "OVERWRITE_SERVER" ||
-            !latestVersion ||
-            latestVersion.createdAt <= snapshotCutoff;
-          if (versionCreated) {
-            await transaction.documentVersion.create({
-              data: {
-                documentId,
-                workspaceId: principal.workspaceId,
-                versionNo: (latestVersion?.versionNo ?? 0) + 1,
-                markdown: current.markdown,
-                documentName: current.name,
-                reason:
-                  input.conflictResolution === "OVERWRITE_SERVER"
-                    ? DocumentVersionReason.CONFLICT_OVERWRITE
-                    : DocumentVersionReason.AUTO_SAVE,
-                sourceRevision: current.revision,
-                actorId: principal.userId,
-                createdAt: savedAt,
-              },
-            });
-          }
-
-          const updated = await transaction.document.updateMany({
-            where: {
-              id: documentId,
-              workspaceId: principal.workspaceId,
-              state: ResourceState.ACTIVE,
-              revision: input.baseRevision,
-            },
-            data: { markdown: input.markdown, revision: { increment: 1 }, updatedAt: savedAt },
-          });
-          if (updated.count !== 1) {
-            const latest = await transaction.document.findFirst({
-              where: { id: documentId, workspaceId: principal.workspaceId },
-            });
-            if (!latest) this.throwNotFound("Document");
-            this.throwRevisionConflict(latest);
-          }
-          const receipt = await transaction.documentSaveReceipt.create({
-            data: {
-              documentId,
-              workspaceId: principal.workspaceId,
-              clientMutationId: input.clientMutationId,
-              baseRevision: input.baseRevision,
-              markdownHash,
-              resultRevision: input.baseRevision + 1,
-              versionCreated,
-              savedAt,
-            },
-          });
-          await this.audit(
-            transaction,
-            principal,
-            "document.save",
-            "document",
-            documentId,
-            requestId,
-            {
-              baseRevision: input.baseRevision,
-              revision: input.baseRevision + 1,
-              bytes: Buffer.byteLength(input.markdown, "utf8"),
-              versionCreated,
-              conflictResolution: input.conflictResolution ?? null,
-              clientMutationId: input.clientMutationId,
-            },
-          );
-          return saveResult(receipt);
-        },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+          },
+          { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted },
+        ),
       );
     } catch (error) {
       this.rethrowMutationError(error);
@@ -612,13 +621,15 @@ export class ContentService {
     document: Parameters<typeof documentSummary>[0],
     workspaceId: string,
   ): Promise<DocumentDetail> {
-    const folders = await this.repository.listVisibleFolders(workspaceId);
-    const byId = new Map(folders.map((folder) => [folder.id, folder]));
     const breadcrumbs: Array<{ id: string; name: string }> = [];
-    let cursor = document.folderId ? byId.get(document.folderId) : undefined;
-    while (cursor) {
-      breadcrumbs.unshift({ id: cursor.id, name: cursor.name });
-      cursor = cursor.parentId ? byId.get(cursor.parentId) : undefined;
+    if (document.folderId) {
+      const folders = await this.repository.listVisibleFolders(workspaceId);
+      const byId = new Map(folders.map((folder) => [folder.id, folder]));
+      let cursor = byId.get(document.folderId);
+      while (cursor) {
+        breadcrumbs.unshift({ id: cursor.id, name: cursor.name });
+        cursor = cursor.parentId ? byId.get(cursor.parentId) : undefined;
+      }
     }
     const byteLength = Buffer.byteLength(document.markdown, "utf8");
     let lineCount = 1;
@@ -792,6 +803,21 @@ export class ContentService {
       },
     );
   }
+}
+
+async function retrySerializable<T>(operation: () => Promise<T>): Promise<T> {
+  const maximumAttempts = 5;
+  for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      const retryable =
+        error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034";
+      if (!retryable || attempt === maximumAttempts) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 5 * 2 ** (attempt - 1)));
+    }
+  }
+  throw new Error("Serializable transaction retry exhausted.");
 }
 
 function saveResult(receipt: {

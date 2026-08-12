@@ -1,0 +1,14 @@
+{
+  "id": "UI-003",
+  "status": "passed",
+  "priority": "P1",
+  "automated": ["apps/web/src/ModalFocusGuard.test.tsx: modal keyboard containment"],
+  "browser": "Real Chromium verified 1600x900 desktop, 1024x768 tablet and 390x844 mobile. Mobile has independent Folder/Document/Editor panes, no horizontal document overflow and hides Split.",
+  "evidence": [
+    "output/playwright/phase8-desktop-light.png",
+    "output/playwright/phase8-tablet-dark.png",
+    "output/playwright/phase8-mobile-editor-final.png",
+    "output/playwright/phase8-mobile-folders.png"
+  ],
+  "verifiedAt": "2026-08-13T03:00:00+08:00"
+}

@@ -5,10 +5,9 @@ the frozen V1 specification in [`markora-spec`](./markora-spec/README.md).
 
 ## Current status
 
-Phase 5 search vertical slice: PostgreSQL hybrid English/CJK search, transactional indexes,
-workspace/folder/subtree scope isolation, progressive Search, Quick Open and route-valid Command
-Palette keyboard flows. Earlier identity, content, editor, versions and Trash guarantees remain
-enforced across every route.
+V1 release-candidate hardening is in progress. Identity/isolation, content, safe editing and local
+recovery, versions/Trash, hybrid English/CJK search, durable import/export jobs, personal settings
+and privacy-preserving administration are implemented with real PostgreSQL acceptance coverage.
 
 ## Repository map
 
@@ -22,3 +21,6 @@ markora-spec/ Frozen V1 source of truth
 ```
 
 See [`docs/DEVELOPMENT.md`](./docs/DEVELOPMENT.md) for setup and verification commands.
+Production installation, backup/restore and upgrades are documented in
+[`docs/OPERATIONS.md`](./docs/OPERATIONS.md); release gates are in
+[`docs/RELEASE.md`](./docs/RELEASE.md).

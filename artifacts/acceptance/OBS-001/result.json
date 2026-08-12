@@ -1,0 +1,11 @@
+{
+  "id": "OBS-001",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "apps/api/src/error.filter.test.ts: coded errors preserve request correlation",
+    "apps/api/src/health/health.service.test.ts: liveness and migration-aware readiness are distinct"
+  ],
+  "operational": "Production API emitted one-line JSON completion logs with requestId, actorUserId when authenticated, route, method, duration, result and safe errorCode. Caddy returned X-Request-ID and health reported service/version.",
+  "verifiedAt": "2026-08-13T03:00:00+08:00"
+}

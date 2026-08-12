@@ -1,0 +1,12 @@
+{
+  "id": "A11Y-001",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "axe-core 4.10.3 WCAG 2 A/AA and WCAG 2.1 AA: zero violations on the authenticated editor journey after fixes",
+    "apps/web/src/ModalFocusGuard.test.tsx: Tab and Shift+Tab wrap in the active modal"
+  ],
+  "manual": "Real Chromium confirmed focus containment, mobile reflow at 390 CSS pixels, visible focus, labelled landmarks/status, hidden mobile Split and light/dark contrast. Axe incomplete contrast nodes were transparent/gradient controls and were manually checked against final opaque token colors.",
+  "evidence": ["output/playwright/phase8-mobile-editor-final.png"],
+  "verifiedAt": "2026-08-13T03:00:00+08:00"
+}

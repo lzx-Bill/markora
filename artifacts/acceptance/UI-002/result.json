@@ -1,0 +1,10 @@
+{
+  "id": "UI-002",
+  "status": "passed",
+  "priority": "P1",
+  "automated": [
+    "Repository scope scan and browser accessible-tree scan found no Favorites or Share control/route."
+  ],
+  "browser": "Documents, Search, Trash, Settings and Admin were the only global destinations in the authenticated production UI.",
+  "verifiedAt": "2026-08-13T03:00:00+08:00"
+}

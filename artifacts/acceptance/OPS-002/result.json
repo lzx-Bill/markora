@@ -1,0 +1,12 @@
+{
+  "id": "OPS-002",
+  "status": "passed",
+  "priority": "P0",
+  "automated": [
+    "packages/config/src/index.test.ts: required production config rejects invalid values",
+    "apps/api/src/health/health.service.test.ts: readiness rejects missing/currently-running migrations",
+    "Compose dependency gate starts API/Worker only after migration exits successfully"
+  ],
+  "operational": "Production readiness returned 200 with version 0.1.0-rc.1 only after all 11 migrations completed.",
+  "verifiedAt": "2026-08-13T03:00:00+08:00"
+}

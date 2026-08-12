@@ -1,0 +1,12 @@
+.git
+.playwright-cli
+.env
+.env.*
+!.env.example
+**/dist
+**/node_modules
+database/generated
+output
+tmp
+artifacts/acceptance/**/actual
+*.log
