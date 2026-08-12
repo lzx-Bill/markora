@@ -1,0 +1,11 @@
+{
+  "id": "DOC-003",
+  "status": "passed",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts > enforces Unicode/case sibling uniqueness in API and database",
+    "apps/api/integration/content.integration.spec.ts > returns 404 for known cross-workspace folder/document IDs without mutation"
+  ],
+  "browser": "Renamed Second.md to the conflicting Stable-Routes.md name; the optimistic UI restored Second.md and stated that document metadata was unchanged.",
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:05:00+08:00"
+}

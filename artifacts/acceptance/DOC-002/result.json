@@ -1,0 +1,10 @@
+{
+  "id": "DOC-002",
+  "status": "passed",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts > uses stable document IDs and performs no write when opening after ancestor changes"
+  ],
+  "browser": "Opened the source preview and navigated folders without editing; the displayed revision remained unchanged.",
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:05:00+08:00"
+}

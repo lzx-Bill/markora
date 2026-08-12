@@ -10,7 +10,7 @@
     "build": "tsup src/main.ts src/bootstrap-admin.ts --format esm --platform node --sourcemap --clean",
     "typecheck": "tsc --noEmit",
     "test": "vitest run src",
-    "test:integration": "vitest run integration"
+    "test:integration": "vitest run integration --maxWorkers=1 --no-file-parallelism"
   },
   "dependencies": {
     "@markora/config": "workspace:*",

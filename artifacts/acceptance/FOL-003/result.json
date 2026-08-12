@@ -1,0 +1,10 @@
+{
+  "id": "FOL-003",
+  "status": "passed",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts > enforces Unicode/case sibling uniqueness in API and database"
+  ],
+  "browser": "Attempted an active sibling rename collision; the UI showed a conflict and restored the original name.",
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:05:00+08:00"
+}

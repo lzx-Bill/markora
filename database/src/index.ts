@@ -1,8 +1,9 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/client/client.js";
 
+export type { Document, Folder } from "../generated/client/client.js";
 export { Prisma } from "../generated/client/client.js";
-export { AuditResult, UserRole, UserStatus } from "../generated/client/enums.js";
+export { AuditResult, ResourceState, UserRole, UserStatus } from "../generated/client/enums.js";
 
 export type DatabaseClient = InstanceType<typeof PrismaClient>;
 

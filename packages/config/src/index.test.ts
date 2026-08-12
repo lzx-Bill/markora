@@ -14,6 +14,8 @@ describe("loadServerConfig", () => {
     expect(config.API_PORT).toBe(27184);
     expect(config.LOG_LEVEL).toBe("info");
     expect(config.SESSION_TTL_DAYS).toBe(30);
+    expect(config.WORKSPACE_MAX_DEPTH).toBe(32);
+    expect(config.DOCUMENT_MAX_BYTES).toBe(5_242_880);
   });
 
   it("fails fast without required secrets", () => {

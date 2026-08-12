@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import type { Principal } from "@markora/contracts";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import type { FolderTreeNode, Principal } from "@markora/contracts";
+import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
-import { WorkspaceShell } from "./App.js";
+import { flattenFolders, GlobalRail } from "./WorkspacePage.js";
 
 afterEach(cleanup);
 
-describe("authenticated workspace shell", () => {
+describe("authenticated workspace navigation", () => {
   const principal: Principal = {
     userId: "00000000-0000-4000-8000-000000000001",
     workspaceId: "00000000-0000-4000-8000-000000000002",
@@ -20,29 +20,43 @@ describe("authenticated workspace shell", () => {
     mustChangePassword: false,
   };
 
-  function renderShell() {
-    return render(
+  it("exposes V1 navigation without excluded Favorites or Share", () => {
+    render(
       <MemoryRouter>
-        <WorkspaceShell principal={principal} onLogout={() => undefined} />
+        <GlobalRail
+          principal={principal}
+          onLogout={() => undefined}
+          current="documents"
+          onNewDocument={() => undefined}
+        />
       </MemoryRouter>,
     );
-  }
-
-  it("exposes the four workspace zones and no excluded navigation", () => {
-    renderShell();
-
     expect(screen.getByRole("navigation", { name: "Global navigation" })).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Folders" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "23 documents" })).toBeInTheDocument();
-    expect(screen.getByRole("main")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Documents" })).toHaveAttribute("href", "/");
     expect(screen.queryByText("Favorites")).not.toBeInTheDocument();
     expect(screen.queryByText("Share")).not.toBeInTheDocument();
   });
 
-  it("switches editor mode without replacing the document", () => {
-    renderShell();
-    fireEvent.click(screen.getByRole("button", { name: "Source" }));
-    expect(screen.getByRole("button", { name: "Source" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("heading", { name: "Welcome to Markora.md" })).toBeInTheDocument();
+  it("flattens the folder tree in stable visual order with depth", () => {
+    const child: FolderTreeNode = {
+      id: "00000000-0000-4000-8000-000000000011",
+      parentId: "00000000-0000-4000-8000-000000000010",
+      name: "Child",
+      documentCount: 1,
+      updatedAt: "2026-08-12T00:00:00.000Z",
+      children: [],
+    };
+    const root: FolderTreeNode = {
+      id: "00000000-0000-4000-8000-000000000010",
+      parentId: null,
+      name: "Root",
+      documentCount: 1,
+      updatedAt: "2026-08-12T00:00:00.000Z",
+      children: [child],
+    };
+    expect(flattenFolders([root]).map(({ name, depth }) => ({ name, depth }))).toEqual([
+      { name: "Root", depth: 0 },
+      { name: "Child", depth: 1 },
+    ]);
   });
 });

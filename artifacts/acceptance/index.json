@@ -1,0 +1,14 @@
+{
+  "phase": 2,
+  "generatedAt": "2026-08-12T22:05:00+08:00",
+  "requirements": {
+    "FOL-001": "FOL-001/result.json",
+    "FOL-002": "FOL-002/result.json",
+    "FOL-003": "FOL-003/result.json",
+    "FOL-004": "FOL-004/result.json",
+    "DOC-001": "DOC-001/result.json",
+    "DOC-002": "DOC-002/result.json",
+    "DOC-003": "DOC-003/result.json",
+    "DOC-004": "DOC-004/result.json"
+  }
+}

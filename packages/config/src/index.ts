@@ -17,6 +17,9 @@ export const ServerConfigSchema = z.object({
   ARGON2_PARALLELISM: z.coerce.number().int().min(1).default(1),
   LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error"]).default("info"),
   TEMP_ROOT: z.string().min(1).default("./tmp"),
+  WORKSPACE_MAX_DEPTH: z.coerce.number().int().min(1).max(128).default(32),
+  WORKSPACE_NAME_MAX_CODE_POINTS: z.coerce.number().int().min(32).max(255).default(255),
+  DOCUMENT_MAX_BYTES: z.coerce.number().int().min(1024).default(5_242_880),
 });
 
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;

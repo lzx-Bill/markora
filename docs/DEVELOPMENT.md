@@ -69,3 +69,14 @@ pnpm test:integration
 
 `pnpm verify` covers formatting/lint, type checking, unit/component tests, OpenAPI drift, Prisma
 schema validation and production builds. Integration tests always target real PostgreSQL.
+
+## Phase 2 content limits
+
+`WORKSPACE_MAX_DEPTH`, `WORKSPACE_NAME_MAX_CODE_POINTS`, and `DOCUMENT_MAX_BYTES` are typed startup
+configuration. Folder and document mutations use stable IDs and are always scoped from the
+authenticated principal; callers never provide a workspace ID. The Web route
+`/documents/<document-id>` therefore survives folder and ancestor rename/move operations.
+
+The current source surface is intentionally read-only until Phase 3 adds revision-guarded editing.
+Small explicit document selections can be downloaded locally; durable folder/workspace export and
+background packaging remain Phase 6 work.

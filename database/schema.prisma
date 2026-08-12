@@ -22,6 +22,12 @@ enum AuditResult {
   FAILURE
 }
 
+enum ResourceState {
+  ACTIVE
+  TRASHED
+  DELETING
+}
+
 model User {
   id                 String        @id @default(uuid()) @db.Uuid
   username           String
@@ -48,8 +54,57 @@ model Workspace {
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   owner       User         @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
   auditEvents AuditEvent[]
+  folders     Folder[]
+  documents   Document[]
 
   @@map("workspaces")
+}
+
+model Folder {
+  id               String        @id @default(uuid()) @db.Uuid
+  workspaceId      String        @map("workspace_id") @db.Uuid
+  parentId         String?       @map("parent_id") @db.Uuid
+  name             String
+  normalizedName   String        @map("normalized_name")
+  state            ResourceState @default(ACTIVE)
+  originalParentId String?       @map("original_parent_id") @db.Uuid
+  deletedAt        DateTime?     @map("deleted_at") @db.Timestamptz(3)
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  workspace        Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent           Folder?       @relation("FolderHierarchy", fields: [parentId, workspaceId], references: [id, workspaceId], onDelete: Restrict)
+  children         Folder[]      @relation("FolderHierarchy")
+  originalParent   Folder?       @relation("FolderOriginalParent", fields: [originalParentId], references: [id], onDelete: SetNull)
+  originalChildren Folder[]      @relation("FolderOriginalParent")
+  documents        Document[]    @relation("DocumentFolder")
+  originalDocuments Document[]   @relation("DocumentOriginalFolder")
+
+  @@index([workspaceId, state, parentId])
+  @@index([parentId])
+  @@unique([id, workspaceId])
+  @@map("folders")
+}
+
+model Document {
+  id               String        @id @default(uuid()) @db.Uuid
+  workspaceId      String        @map("workspace_id") @db.Uuid
+  folderId         String?       @map("folder_id") @db.Uuid
+  name             String
+  normalizedName   String        @map("normalized_name")
+  markdown         String        @default("")
+  revision         Int           @default(1)
+  state            ResourceState @default(ACTIVE)
+  originalFolderId String?       @map("original_folder_id") @db.Uuid
+  deletedAt        DateTime?     @map("deleted_at") @db.Timestamptz(3)
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  workspace        Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  folder           Folder?       @relation("DocumentFolder", fields: [folderId, workspaceId], references: [id, workspaceId], onDelete: Restrict)
+  originalFolder   Folder?       @relation("DocumentOriginalFolder", fields: [originalFolderId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, state, folderId, updatedAt(sort: Desc)])
+  @@index([folderId])
+  @@map("documents")
 }
 
 model Session {

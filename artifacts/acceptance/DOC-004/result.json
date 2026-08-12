@@ -1,0 +1,10 @@
+{
+  "id": "DOC-004",
+  "status": "passed",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts > returns itemized bulk move/trash results and never mutates foreign IDs"
+  ],
+  "browser": "Selected two documents, moved both, downloaded and inspected a ZIP containing both .md files, then moved both to Trash and returned safely to the root route.",
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:05:00+08:00"
+}

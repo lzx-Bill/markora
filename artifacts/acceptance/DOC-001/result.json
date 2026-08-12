@@ -1,0 +1,10 @@
+{
+  "id": "DOC-001",
+  "status": "passed",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts > accepts only safe .md names and rejects independent title metadata"
+  ],
+  "browser": "Created Markdown documents through the document-name-only dialog and opened them by stable document ID.",
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:05:00+08:00"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "FOL-004",
+  "status": "passed",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts > uses stable document IDs and performs no write when opening after ancestor changes"
+  ],
+  "browser": "Opened a document by /documents/:documentId, renamed its ancestor and moved hierarchy nodes; the URL and selected document ID did not change.",
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:05:00+08:00"
+}

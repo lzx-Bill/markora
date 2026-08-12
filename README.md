@@ -5,9 +5,10 @@ the frozen V1 specification in [`markora-spec`](./markora-spec/README.md).
 
 ## Current status
 
-Phase 1 identity and isolation: one-time bootstrap admin, Argon2id credentials, opaque cookie
-sessions, authentication/CSRF guards, login throttling/audit, account session controls, and an
-authenticated application shell backed by real PostgreSQL integration tests.
+Phase 2 folder/document vertical slice: workspace-scoped hierarchy and Markdown records, stable-ID
+document routes, normalized naming constraints, create/open/rename/move/trash and itemized bulk
+operations, optimistic UI rollback, and real PostgreSQL isolation/performance tests. Phase 1
+identity/session protections remain enforced across every content route.
 
 ## Repository map
 

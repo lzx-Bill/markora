@@ -1,0 +1,11 @@
+{
+  "id": "FOL-002",
+  "status": "passed",
+  "automated": [
+    "packages/domain/src/hierarchy.test.ts > rejects moving a folder into itself or a descendant",
+    "apps/api/integration/content.integration.spec.ts > creates, renames and moves folders while rejecting cycles atomically"
+  ],
+  "browser": "Attempted to move Research into Architecture; the UI reported FOLDER_CYCLE and preserved the original hierarchy.",
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:05:00+08:00"
+}

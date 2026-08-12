@@ -1,0 +1,10 @@
+{
+  "id": "FOL-001",
+  "status": "passed",
+  "automated": [
+    "apps/api/integration/content.integration.spec.ts > creates, renames and moves folders while rejecting cycles atomically"
+  ],
+  "browser": "Created nested folders, renamed an ancestor, then moved its child to the workspace root while the open document and stable URL remained active.",
+  "environment": "local PostgreSQL and Chromium",
+  "verifiedAt": "2026-08-12T22:05:00+08:00"
+}
