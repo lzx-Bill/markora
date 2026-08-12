@@ -1,0 +1,14 @@
+{
+  "name": "@markora/database",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:integration": "vitest run tests"
+  },
+  "devDependencies": {
+    "@types/pg": "8.21.0",
+    "pg": "8.23.0"
+  }
+}

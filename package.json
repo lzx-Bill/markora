@@ -1,0 +1,33 @@
+{
+  "name": "markora",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=24.11.1 <25",
+    "pnpm": ">=10.28.2 <11"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "dev": "pnpm --parallel --filter @markora/web --filter @markora/api --filter @markora/worker dev",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "test:integration": "pnpm --filter @markora/database test:integration",
+    "openapi:generate": "pnpm --filter @markora/contracts openapi:generate",
+    "openapi:check": "pnpm --filter @markora/contracts openapi:check",
+    "db:validate": "prisma validate --config database/prisma.config.ts",
+    "db:migrate": "prisma migrate deploy --config database/prisma.config.ts",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm openapi:check && pnpm db:validate && pnpm build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.8",
+    "@types/node": "26.2.0",
+    "dotenv": "17.4.2",
+    "prisma": "7.9.1",
+    "tsx": "4.23.12",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

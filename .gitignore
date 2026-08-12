@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.vite/
+.playwright-cli/
+.turbo/
+.env
+.env.*
+!.env.example
+*.log
+artifacts/acceptance/**/actual/
+tmp/

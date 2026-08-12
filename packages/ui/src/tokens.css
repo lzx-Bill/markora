@@ -1,0 +1,52 @@
+:root {
+  color-scheme: light;
+  --mk-canvas: #f3f0ea;
+  --mk-canvas-grid: rgb(121 113 102 / 5%);
+  --mk-panel: rgb(255 255 255 / 76%);
+  --mk-panel-strong: #fffefb;
+  --mk-paper: #fffefa;
+  --mk-text: #282b32;
+  --mk-text-muted: #737881;
+  --mk-border: rgb(70 72 78 / 12%);
+  --mk-border-strong: rgb(70 72 78 / 19%);
+  --mk-accent: #355cff;
+  --mk-accent-soft: #edf0ff;
+  --mk-success: #198754;
+  --mk-danger: #c53838;
+  --mk-shadow-panel: 0 16px 46px rgb(50 45 35 / 7%);
+  --mk-shadow-paper: 0 18px 40px rgb(50 45 35 / 8%);
+  --mk-radius-sm: 8px;
+  --mk-radius-md: 14px;
+  --mk-radius-lg: 20px;
+  --mk-space-1: 4px;
+  --mk-space-2: 8px;
+  --mk-space-3: 12px;
+  --mk-space-4: 16px;
+  --mk-space-5: 24px;
+  --mk-space-6: 32px;
+  --mk-font-ui:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mk-font-reading: Georgia, "Times New Roman", serif;
+  --mk-focus: 0 0 0 3px rgb(53 92 255 / 26%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --mk-canvas: #17191d;
+    --mk-canvas-grid: rgb(255 255 255 / 3%);
+    --mk-panel: rgb(31 34 40 / 86%);
+    --mk-panel-strong: #22252b;
+    --mk-paper: #202329;
+    --mk-text: #f1f1ee;
+    --mk-text-muted: #a6abb5;
+    --mk-border: rgb(255 255 255 / 10%);
+    --mk-border-strong: rgb(255 255 255 / 18%);
+    --mk-accent: #7c96ff;
+    --mk-accent-soft: #29304c;
+    --mk-success: #52c98a;
+    --mk-danger: #ff7777;
+    --mk-shadow-panel: 0 16px 46px rgb(0 0 0 / 24%);
+    --mk-shadow-paper: 0 18px 40px rgb(0 0 0 / 22%);
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "@markora/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --clean",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "unicode-case-folding": "1.1.1"
+  },
+  "devDependencies": {
+    "tsup": "8.5.1"
+  }
+}

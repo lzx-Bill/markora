@@ -1,0 +1,23 @@
+{
+  "name": "@markora/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "build": "tsup src/main.ts --format esm --platform node --sourcemap --clean",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@markora/config": "workspace:*",
+    "@nestjs/common": "11.1.29",
+    "@nestjs/core": "11.1.29",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  },
+  "devDependencies": {
+    "tsup": "8.5.1"
+  }
+}
