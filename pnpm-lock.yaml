@@ -127,8 +127,8 @@ importers:
         specifier: 3.4.13
         version: 3.4.13
       katex:
-        specifier: 0.16.33
-        version: 0.16.33
+        specifier: 0.18.3
+        version: 0.18.3
       mermaid:
         specifier: 11.16.1
         version: 11.16.1
@@ -2775,16 +2775,12 @@ packages:
   json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
 
-  katex@0.16.33:
-    resolution: {integrity: sha512-q3N5u+1sY9Bu7T4nlXoiRBXWfwSefNGoKeOwekV+gw0cAXQlz2Ww6BLcmBxVDeXBMUDQv6fK5bcNaJLxob3ZQA==}
-    hasBin: true
-
   katex@0.16.47:
     resolution: {integrity: sha512-Eeo8Ys1doU1z+x8AZsPpQu+p/QcZBI5PeOo7QGQdy2x2m0MU/hYagBbGOmXwr5KVbEfVuWv9LpnQWeehogurjg==}
     hasBin: true
 
-  katex@0.18.4:
-    resolution: {integrity: sha512-IMPntbRLOU+eu88XDiFKqQ8Akhr9Tv7jDMXqPhjG9SI1JMA4DIgXk4x9k4skJz2NZJXBRbC+2pYBLj9olqcZow==}
+  katex@0.18.3:
+    resolution: {integrity: sha512-6kbPr8KiYZpRfNNIw+8Td33njnFzK/ELcw6bI9FzIHysYPatAUdepQimfCX1vG2VCD/5Lv+Gu6P5YA58k8HHmw==}
     hasBin: true
 
   khroma@2.1.0:
@@ -4753,7 +4749,7 @@ snapshots:
       clsx: 2.1.1
       codemirror: 6.0.2
       dompurify: 3.4.13
-      katex: 0.18.4
+      katex: 0.18.3
       lodash-es: 4.18.1
       prosemirror-virtual-cursor: 0.4.2(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)
       remark-math: 6.0.0
@@ -6790,15 +6786,11 @@ snapshots:
 
   json-schema-traverse@1.0.0: {}
 
-  katex@0.16.33:
-    dependencies:
-      commander: 8.3.0
-
   katex@0.16.47:
     dependencies:
       commander: 8.3.0
 
-  katex@0.18.4:
+  katex@0.18.3:
     dependencies:
       commander: 8.3.0
 
