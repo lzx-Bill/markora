@@ -43,8 +43,15 @@ button {
   background-size: 16px 16px;
 }
 
+.workspace-shell {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .panel {
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
   border: 1px solid var(--mk-border);
   border-radius: var(--mk-radius-lg);
@@ -294,6 +301,58 @@ button {
   font-size: 13px;
 }
 
+.folder-scroll-region,
+.document-scroll-region {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: color-mix(in srgb, var(--mk-text-muted) 30%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.folder-scroll-region {
+  flex: 1;
+}
+
+.document-scroll-region {
+  flex: 1;
+  margin-top: 2px;
+}
+
+.folder-scroll-region::-webkit-scrollbar,
+.document-scroll-region::-webkit-scrollbar,
+.editor-stage::-webkit-scrollbar,
+.workspace-shell .work-surface::-webkit-scrollbar,
+.workspace-shell .cm-scroller::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.folder-scroll-region::-webkit-scrollbar-track,
+.document-scroll-region::-webkit-scrollbar-track,
+.editor-stage::-webkit-scrollbar-track,
+.workspace-shell .work-surface::-webkit-scrollbar-track,
+.workspace-shell .cm-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.folder-scroll-region::-webkit-scrollbar-thumb,
+.document-scroll-region::-webkit-scrollbar-thumb,
+.editor-stage::-webkit-scrollbar-thumb,
+.workspace-shell .work-surface::-webkit-scrollbar-thumb,
+.workspace-shell .cm-scroller::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mk-text-muted) 30%, transparent);
+}
+
+.folder-scroll-region::-webkit-scrollbar-thumb:hover,
+.document-scroll-region::-webkit-scrollbar-thumb:hover,
+.editor-stage::-webkit-scrollbar-thumb:hover,
+.workspace-shell .work-surface::-webkit-scrollbar-thumb:hover,
+.workspace-shell .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--mk-text-muted) 48%, transparent);
+}
+
 .tree-root {
   width: 100%;
   border: 0;
@@ -483,10 +542,11 @@ button {
 }
 
 .work-surface {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
-  grid-template-rows: auto auto 1fr;
   border: 1px solid var(--mk-border);
   border-radius: var(--mk-radius-lg);
   background: rgb(255 255 255 / 28%);
@@ -516,6 +576,7 @@ button {
 .workspace-empty,
 .document-loading {
   display: grid;
+  flex: 1;
   max-width: 680px;
   min-height: 70vh;
   align-content: center;
@@ -706,11 +767,15 @@ button {
 
 .editor-stage {
   display: grid;
+  flex: 1;
   min-height: 0;
   grid-template-columns: minmax(360px, 760px) minmax(140px, 190px);
   justify-content: center;
   gap: 22px;
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: color-mix(in srgb, var(--mk-text-muted) 30%, transparent) transparent;
+  scrollbar-width: thin;
   padding: 24px;
 }
 
@@ -1845,6 +1910,9 @@ button {
     min-height: calc(100dvh - 112px);
     max-height: calc(100dvh - 112px);
     overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: color-mix(in srgb, var(--mk-text-muted) 30%, transparent) transparent;
+    scrollbar-width: thin;
     border: 0;
     border-radius: 0;
   }

@@ -362,39 +362,41 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
             ＋
           </button>
         </div>
-        {treeQuery.isPending ? (
-          <p className="panel-status" role="status">
-            Loading folders…
-          </p>
-        ) : null}
-        {treeQuery.isError ? (
-          <PanelError message={treeQuery.error.message} retry={() => treeQuery.refetch()} />
-        ) : null}
-        {treeQuery.data ? (
-          <nav aria-label="Folders">
-            <ul className="tree">
-              <li>
-                <button
-                  className={selectedFolderId === null ? "tree-root selected" : "tree-root"}
-                  type="button"
-                  aria-current={selectedFolderId === null ? "page" : undefined}
-                  onClick={() => selectFolder(null)}
-                >
-                  ⌂　Workspace root
-                </button>
-              </li>
-              {treeQuery.data.data.map((folder) => (
-                <FolderTreeItem
-                  key={folder.id}
-                  folder={folder}
-                  selectedId={selectedFolderId}
-                  onSelect={selectFolder}
-                  rememberExpanded={workspacePreferences.rememberExpandedFolders ?? true}
-                />
-              ))}
-            </ul>
-          </nav>
-        ) : null}
+        <div className="folder-scroll-region">
+          {treeQuery.isPending ? (
+            <p className="panel-status" role="status">
+              Loading folders…
+            </p>
+          ) : null}
+          {treeQuery.isError ? (
+            <PanelError message={treeQuery.error.message} retry={() => treeQuery.refetch()} />
+          ) : null}
+          {treeQuery.data ? (
+            <nav aria-label="Folders">
+              <ul className="tree">
+                <li>
+                  <button
+                    className={selectedFolderId === null ? "tree-root selected" : "tree-root"}
+                    type="button"
+                    aria-current={selectedFolderId === null ? "page" : undefined}
+                    onClick={() => selectFolder(null)}
+                  >
+                    ⌂　Workspace root
+                  </button>
+                </li>
+                {treeQuery.data.data.map((folder) => (
+                  <FolderTreeItem
+                    key={folder.id}
+                    folder={folder}
+                    selectedId={selectedFolderId}
+                    onSelect={selectFolder}
+                    rememberExpanded={workspacePreferences.rememberExpandedFolders ?? true}
+                  />
+                ))}
+              </ul>
+            </nav>
+          ) : null}
+        </div>
       </aside>
 
       <aside className="document-drawer panel" aria-labelledby="documents-heading">
@@ -487,68 +489,70 @@ export function WorkspacePage({ principal, onLogout }: WorkspacePageProps) {
             </button>
           </div>
         ) : null}
-        {documentsQuery.isPending ? (
-          <p className="panel-status" role="status">
-            Loading documents…
-          </p>
-        ) : null}
-        {documentsQuery.isError ? (
-          <PanelError
-            message={documentsQuery.error.message}
-            retry={() => documentsQuery.refetch()}
-          />
-        ) : null}
-        {documentsQuery.data?.data.length === 0 ? (
-          <div className="empty-panel">
-            <p>No documents here yet.</p>
-            <button
-              className="primary-action"
-              type="button"
-              onClick={() => openAction({ kind: "create-document" })}
-            >
-              New Document
-            </button>
-            <button
-              className="secondary-action"
-              type="button"
-              onClick={() =>
-                dispatchPortability({ kind: "import", targetFolderId: selectedFolderId })
-              }
-            >
-              Import Markdown
-            </button>
-          </div>
-        ) : null}
-        <ul className="document-list">
-          {visibleDocuments.map((document) => (
-            <li
-              key={document.id}
-              className={documentId === document.id ? "active-document" : undefined}
-            >
-              <label className="document-check">
-                <input
-                  type="checkbox"
-                  aria-label={`Select ${document.name}`}
-                  checked={selectedIds.has(document.id)}
-                  onChange={() => toggleSelected(document.id)}
-                />
-              </label>
+        <div className="document-scroll-region">
+          {documentsQuery.isPending ? (
+            <p className="panel-status" role="status">
+              Loading documents…
+            </p>
+          ) : null}
+          {documentsQuery.isError ? (
+            <PanelError
+              message={documentsQuery.error.message}
+              retry={() => documentsQuery.refetch()}
+            />
+          ) : null}
+          {documentsQuery.data?.data.length === 0 ? (
+            <div className="empty-panel">
+              <p>No documents here yet.</p>
               <button
-                className={documentId === document.id ? "selected" : undefined}
+                className="primary-action"
                 type="button"
-                onClick={() => navigateToDocument(document.id)}
+                onClick={() => openAction({ kind: "create-document" })}
               >
-                <span className="document-icon" aria-hidden="true">
-                  ▤
-                </span>
-                <span>
-                  <strong>{document.name}</strong>
-                  <small>{formatRelative(document.updatedAt)}</small>
-                </span>
+                New Document
               </button>
-            </li>
-          ))}
-        </ul>
+              <button
+                className="secondary-action"
+                type="button"
+                onClick={() =>
+                  dispatchPortability({ kind: "import", targetFolderId: selectedFolderId })
+                }
+              >
+                Import Markdown
+              </button>
+            </div>
+          ) : null}
+          <ul className="document-list">
+            {visibleDocuments.map((document) => (
+              <li
+                key={document.id}
+                className={documentId === document.id ? "active-document" : undefined}
+              >
+                <label className="document-check">
+                  <input
+                    type="checkbox"
+                    aria-label={`Select ${document.name}`}
+                    checked={selectedIds.has(document.id)}
+                    onChange={() => toggleSelected(document.id)}
+                  />
+                </label>
+                <button
+                  className={documentId === document.id ? "selected" : undefined}
+                  type="button"
+                  onClick={() => navigateToDocument(document.id)}
+                >
+                  <span className="document-icon" aria-hidden="true">
+                    ▤
+                  </span>
+                  <span>
+                    <strong>{document.name}</strong>
+                    <small>{formatRelative(document.updatedAt)}</small>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </aside>
 
       <main
