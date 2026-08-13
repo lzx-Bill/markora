@@ -1796,8 +1796,10 @@ button {
   font-size: 28px;
 }
 .admin-master-detail {
+  width: min(100%, 720px);
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 1.2fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
 }
 .admin-section-heading,
