@@ -2,6 +2,7 @@ import type { AdminConfigValues, Principal } from "@markora/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { formatDateTime } from "./date.js";
 import {
   cancelAdminJob,
   createAdminUser,
@@ -20,7 +21,6 @@ import {
   updateAdminUser,
 } from "./settings-api.js";
 import { GlobalRail } from "./WorkspacePage.js";
-import { formatDateTime } from "./date.js";
 
 const sections = ["overview", "users", "config", "security", "jobs", "audit", "system"] as const;
 
@@ -49,7 +49,7 @@ export function AdminPage({
           </Link>
         ))}
       </aside>
-      <main className="settings-surface panel admin-surface">
+      <main className={`settings-surface panel admin-surface admin-section-${section}`}>
         <header className="settings-header">
           <p className="eyebrow">ADMINISTRATION</p>
           <h1>{title(section)}</h1>
@@ -78,27 +78,36 @@ function Overview() {
   const query = useQuery({ queryKey: ["admin", "overview"], queryFn: getAdminOverview });
   if (!query.data) return <QueryState query={query} />;
   return (
-    <>
-      <section className="metric-grid">
+    <div className="admin-overview">
+      <section className="metric-grid" aria-label="Overview metrics">
         {Object.entries(query.data.counts).map(([key, value]) => (
-          <article key={key} className="settings-card">
+          <article key={key} className="settings-card overview-metric-card">
             <small>{title(key)}</small>
             <strong>{value}</strong>
           </article>
         ))}
       </section>
-      <section className="settings-card">
+      <section className="settings-card overview-card">
         <h2>Components</h2>
-        {Object.entries(query.data.components).map(([key, value]) => (
-          <p key={key}>
-            <strong>{title(key)}</strong> · {value}
-          </p>
-        ))}
+        <ul className="component-status-list" aria-label="Component health">
+          {Object.entries(query.data.components).map(([key, value]) => (
+            <li key={key}>
+              <strong>{title(key)}</strong>
+              <span className={`component-status ${value === "HEALTHY" ? "is-healthy" : ""}`}>
+                <i aria-hidden="true" />
+                {value}
+              </span>
+            </li>
+          ))}
+        </ul>
       </section>
-      <section className="settings-card">
+      <section className="settings-card overview-card recent-issues-card">
         <h2>Recent issues</h2>
         {query.data.recentIssues.length === 0 ? (
-          <p>No failed or interrupted jobs.</p>
+          <div className="admin-empty-state" role="status">
+            <span aria-hidden="true">✓</span>
+            <p>No failed or interrupted jobs.</p>
+          </div>
         ) : (
           <ul className="admin-list">
             {query.data.recentIssues.map((issue) => (
@@ -108,8 +117,7 @@ function Overview() {
                     {issue.type} · {issue.state}
                   </strong>
                   <small>
-                    {issue.errorCode ?? "No error code"} ·{" "}
-                    {formatDateTime(issue.occurredAt)}
+                    {issue.errorCode ?? "No error code"} · {formatDateTime(issue.occurredAt)}
                   </small>
                 </span>
               </li>
@@ -117,7 +125,7 @@ function Overview() {
           </ul>
         )}
       </section>
-    </>
+    </div>
   );
 }
 
@@ -582,8 +590,8 @@ function Audit() {
                 {event.action} · {event.result}
               </strong>
               <small>
-                {formatDateTime(event.occurredAt)} ·{" "}
-                {event.actor?.displayName ?? "System"} · request {event.requestId}
+                {formatDateTime(event.occurredAt)} · {event.actor?.displayName ?? "System"} ·
+                request {event.requestId}
               </small>
               <code>{JSON.stringify(event.metadata)}</code>
             </span>

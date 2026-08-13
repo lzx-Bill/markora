@@ -1795,6 +1795,99 @@ button {
 .metric-grid strong {
   font-size: 28px;
 }
+.admin-section-overview .settings-header,
+.admin-overview {
+  max-width: 720px;
+}
+.admin-section-overview .settings-header h1 {
+  font-family: var(--mk-font-ui);
+  font-size: clamp(34px, 4vw, 40px);
+  line-height: 1.1;
+}
+.admin-overview {
+  display: grid;
+  gap: 14px;
+  margin: 0 auto;
+}
+.admin-overview .metric-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+.metric-grid .overview-metric-card {
+  min-height: 104px;
+  align-content: center;
+  margin: 0;
+  padding: 20px 22px;
+}
+.overview-card {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 20px 28px;
+}
+.overview-card h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+.component-status-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.component-status-list li {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--mk-border);
+}
+.component-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: color-mix(in srgb, var(--mk-danger) 10%, transparent);
+  color: var(--mk-danger);
+  font-size: 11px;
+  font-weight: 700;
+}
+.component-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentcolor;
+}
+.component-status.is-healthy {
+  background: var(--mk-success-soft);
+  color: var(--mk-success);
+}
+.recent-issues-card {
+  min-height: 130px;
+}
+.admin-empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding-top: 2px;
+  color: var(--mk-text-muted);
+  text-align: center;
+}
+.admin-empty-state span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid var(--mk-success);
+  border-radius: 50%;
+  background: var(--mk-success-soft);
+  color: var(--mk-success);
+  font-size: 20px;
+}
+.admin-empty-state p {
+  margin: 0;
+}
 .admin-master-detail {
   width: min(100%, 720px);
   margin: 0 auto;
@@ -2064,6 +2157,10 @@ button {
 
   .settings-card-heading {
     display: grid;
+  }
+
+  .admin-overview .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .editor-toolbar button:nth-child(3) {
