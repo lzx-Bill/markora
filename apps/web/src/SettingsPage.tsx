@@ -115,7 +115,7 @@ function PreferencePanel({
     if (confirmed.current) mutation.mutate({ patch });
   };
   return (
-    <main className="settings-surface panel">
+    <main className={`settings-surface panel preference-surface preference-category-${category}`}>
       <header className="settings-header">
         <p className="eyebrow">PERSONAL SETTINGS</p>
         <h1>{label(category)}</h1>
@@ -123,7 +123,9 @@ function PreferencePanel({
         <PreferenceStatus queryPending={query.isPending} mutation={mutation} />
       </header>
       {data ? (
-        <section className="settings-card settings-form">
+        <section
+          className={`settings-card settings-form${category === "editor" ? " settings-editor-scroll" : ""}`}
+        >
           {category === "profile" ? (
             <>
               <Setting label="Display name">
