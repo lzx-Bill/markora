@@ -645,7 +645,7 @@ function Audit() {
   });
   if (!query.data) return <QueryState query={query} />;
   return (
-    <section className="settings-card">
+    <section className="settings-card admin-audit-card">
       <div className="admin-filters">
         <input
           aria-label="Filter audit action"
@@ -663,22 +663,24 @@ function Audit() {
           <option value="FAILURE">Failure</option>
         </select>
       </div>
-      <ul className="admin-list">
-        {query.data.data.map((event) => (
-          <li key={event.id}>
-            <span>
-              <strong>
-                {event.action} · {event.result}
-              </strong>
-              <small>
-                {formatDateTime(event.occurredAt)} · {event.actor?.displayName ?? "System"} ·
-                request {event.requestId}
-              </small>
-              <code>{JSON.stringify(event.metadata)}</code>
-            </span>
-          </li>
-        ))}
-      </ul>
+      <div className="admin-audit-scroll">
+        <ul className="admin-list">
+          {query.data.data.map((event) => (
+            <li key={event.id}>
+              <span>
+                <strong>
+                  {event.action} · {event.result}
+                </strong>
+                <small>
+                  {formatDateTime(event.occurredAt)} · {event.actor?.displayName ?? "System"} ·
+                  request {event.requestId}
+                </small>
+                <code>{JSON.stringify(event.metadata)}</code>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }

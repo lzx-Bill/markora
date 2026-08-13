@@ -302,7 +302,8 @@ button {
 }
 
 .folder-scroll-region,
-.document-scroll-region {
+.document-scroll-region,
+.admin-audit-scroll {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -323,7 +324,8 @@ button {
 .document-scroll-region::-webkit-scrollbar,
 .editor-stage::-webkit-scrollbar,
 .workspace-shell .work-surface::-webkit-scrollbar,
-.workspace-shell .cm-scroller::-webkit-scrollbar {
+.workspace-shell .cm-scroller::-webkit-scrollbar,
+.admin-audit-scroll::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
@@ -332,7 +334,8 @@ button {
 .document-scroll-region::-webkit-scrollbar-track,
 .editor-stage::-webkit-scrollbar-track,
 .workspace-shell .work-surface::-webkit-scrollbar-track,
-.workspace-shell .cm-scroller::-webkit-scrollbar-track {
+.workspace-shell .cm-scroller::-webkit-scrollbar-track,
+.admin-audit-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
 
@@ -340,7 +343,8 @@ button {
 .document-scroll-region::-webkit-scrollbar-thumb,
 .editor-stage::-webkit-scrollbar-thumb,
 .workspace-shell .work-surface::-webkit-scrollbar-thumb,
-.workspace-shell .cm-scroller::-webkit-scrollbar-thumb {
+.workspace-shell .cm-scroller::-webkit-scrollbar-thumb,
+.admin-audit-scroll::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: color-mix(in srgb, var(--mk-text-muted) 30%, transparent);
 }
@@ -349,7 +353,8 @@ button {
 .document-scroll-region::-webkit-scrollbar-thumb:hover,
 .editor-stage::-webkit-scrollbar-thumb:hover,
 .workspace-shell .work-surface::-webkit-scrollbar-thumb:hover,
-.workspace-shell .cm-scroller::-webkit-scrollbar-thumb:hover {
+.workspace-shell .cm-scroller::-webkit-scrollbar-thumb:hover,
+.admin-audit-scroll::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--mk-text-muted) 48%, transparent);
 }
 
@@ -1740,6 +1745,9 @@ button {
   display: none;
 }
 .settings-layout {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
   grid-template-columns: 220px 230px minmax(0, 1fr);
 }
 .settings-nav {
@@ -1942,6 +1950,35 @@ button {
 .admin-list code {
   overflow-wrap: anywhere;
   white-space: normal;
+}
+.admin-section-audit {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+.admin-section-audit .settings-header {
+  width: min(100%, 720px);
+  flex: 0 0 auto;
+}
+.admin-audit-card {
+  display: flex;
+  width: min(100%, 720px);
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  padding-bottom: 12px;
+}
+.admin-audit-card .admin-filters {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+.admin-audit-scroll {
+  flex: 1;
+  padding-right: 8px;
+}
+.admin-audit-scroll .admin-list {
+  margin: 0;
 }
 .admin-users-workspace > .settings-card {
   width: 100%;
@@ -2275,6 +2312,19 @@ button {
     display: block;
     min-height: 100dvh;
     padding: 0;
+  }
+
+  .settings-layout {
+    height: auto;
+    overflow: visible;
+  }
+
+  .admin-section-audit {
+    overflow: visible;
+  }
+
+  .admin-audit-card {
+    min-height: 520px;
   }
 
   .folder-drawer,
