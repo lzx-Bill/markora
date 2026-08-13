@@ -183,11 +183,15 @@ function Users() {
   });
   if (!list.data) return <QueryState query={list} />;
   return (
-    <div className="admin-master-detail">
-      <section className="settings-card">
+    <div className="admin-master-detail admin-users-workspace">
+      <section className="settings-card admin-users-card">
         <div className="admin-section-heading">
           <h2>Users</h2>
-          <button type="button" onClick={() => setShowCreate(true)}>
+          <button
+            className="primary-action admin-new-user"
+            type="button"
+            onClick={() => setShowCreate(true)}
+          >
             New user
           </button>
         </div>
@@ -217,29 +221,77 @@ function Users() {
             <option value="ADMIN">Admin</option>
           </select>
         </div>
-        <ul className="admin-list">
+        <ul className="admin-list admin-user-list">
           {list.data.data.map((user) => (
             <li key={user.id}>
-              <button type="button" onClick={() => setSelected(user.id)}>
-                <strong>{user.displayName}</strong>
-                <small>
-                  {user.username} · {user.role} · {user.status}
-                </small>
+              <button
+                className={selected === user.id ? "selected" : undefined}
+                type="button"
+                aria-pressed={selected === user.id}
+                onClick={() => setSelected(user.id)}
+              >
+                <span className="admin-user-identity">
+                  <span className="admin-user-avatar" aria-hidden="true">
+                    {(user.displayName.trim()[0] ?? user.username[0] ?? "?").toUpperCase()}
+                  </span>
+                  <span>
+                    <strong>{user.displayName}</strong>
+                    <small>@{user.username}</small>
+                  </span>
+                </span>
+                <span className="admin-user-badges">
+                  <span className="admin-role-badge">{title(user.role)}</span>
+                  <span
+                    className={`admin-status-badge${user.status === "ACTIVE" ? " is-active" : ""}`}
+                  >
+                    <i aria-hidden="true" />
+                    {title(user.status)}
+                  </span>
+                </span>
               </button>
             </li>
           ))}
         </ul>
       </section>
       {detail.data ? (
-        <section className="settings-card">
-          <h2>{detail.data.displayName}</h2>
-          <p>{detail.data.email}</p>
-          <p>
-            {detail.data.counts.documents} documents · {detail.data.storageBytes} bytes ·{" "}
-            {detail.data.counts.sessions} sessions
-          </p>
-          <div className="dialog-actions">
+        <section className="settings-card admin-user-detail">
+          <div className="admin-user-detail-heading">
+            <span className="admin-user-avatar is-large" aria-hidden="true">
+              {(detail.data.displayName.trim()[0] ?? detail.data.username[0] ?? "?").toUpperCase()}
+            </span>
+            <span>
+              <h2>{detail.data.displayName}</h2>
+              <p>
+                @{detail.data.username} · {detail.data.email}
+              </p>
+            </span>
+            <span className="admin-user-badges">
+              <span className="admin-role-badge">{title(detail.data.role)}</span>
+              <span
+                className={`admin-status-badge${detail.data.status === "ACTIVE" ? " is-active" : ""}`}
+              >
+                <i aria-hidden="true" />
+                {title(detail.data.status)}
+              </span>
+            </span>
+          </div>
+          <div className="admin-user-metrics">
+            <span>
+              <small>Documents</small>
+              <strong>{detail.data.counts.documents}</strong>
+            </span>
+            <span>
+              <small>Storage</small>
+              <strong>{formatBytes(detail.data.storageBytes)}</strong>
+            </span>
+            <span>
+              <small>Sessions</small>
+              <strong>{detail.data.counts.sessions}</strong>
+            </span>
+          </div>
+          <div className="admin-user-actions">
             <button
+              className="secondary-action"
               type="button"
               onClick={() => {
                 const disabling = detail.data.status === "ACTIVE";
@@ -257,6 +309,7 @@ function Users() {
               {detail.data.status === "ACTIVE" ? "Disable user" : "Enable user"}
             </button>
             <button
+              className="secondary-action"
               type="button"
               onClick={() => {
                 const demoting = detail.data.role === "ADMIN";
@@ -270,32 +323,47 @@ function Users() {
             >
               {detail.data.role === "ADMIN" ? "Revoke admin" : "Grant admin"}
             </button>
-            <button type="button" onClick={() => revoke.mutate()}>
+            <button className="secondary-action" type="button" onClick={() => revoke.mutate()}>
               Revoke sessions
             </button>
           </div>
-          <label>
-            Temporary password
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </label>
-          <button
-            type="button"
-            disabled={password.length < 12}
-            onClick={() => {
+          <form
+            className="admin-password-reset"
+            onSubmit={(event) => {
+              event.preventDefault();
               if (window.confirm("Reset this password and revoke all active sessions?"))
                 reset.mutate();
             }}
           >
-            Reset password
-          </button>
+            <input
+              className="visually-hidden"
+              name="username"
+              autoComplete="username"
+              value={detail.data.username}
+              readOnly
+              tabIndex={-1}
+              aria-label="Username"
+            />
+            <label>
+              Temporary password
+              <input
+                type="password"
+                autoComplete="new-password"
+                placeholder="At least 12 characters"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </label>
+            <button className="primary-action" type="submit" disabled={password.length < 12}>
+              Reset password
+            </button>
+          </form>
           <ActionError mutations={[action, reset, revoke]} />
         </section>
       ) : (
-        <section className="settings-card">
+        <section className="settings-card admin-user-empty">
+          <span aria-hidden="true" />
+          <h2>No user selected</h2>
           <p>Select a user to inspect safe account counts.</p>
         </section>
       )}
@@ -343,6 +411,7 @@ function Users() {
               <input
                 required
                 type="password"
+                autoComplete="new-password"
                 minLength={12}
                 value={newUser.temporaryPassword}
                 onChange={(event) =>
@@ -376,6 +445,18 @@ function Users() {
       ) : null}
     </div>
   );
+}
+
+function formatBytes(value: number) {
+  if (value < 1024) return `${value} B`;
+  const units = ["KB", "MB", "GB", "TB"];
+  let amount = value / 1024;
+  let unit = units[0];
+  for (let index = 1; amount >= 1024 && index < units.length; index += 1) {
+    amount /= 1024;
+    unit = units[index];
+  }
+  return `${amount >= 10 ? amount.toFixed(0) : amount.toFixed(1)} ${unit}`;
 }
 
 function Config() {
