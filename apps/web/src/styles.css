@@ -818,6 +818,7 @@ button {
 }
 
 .editor-paper {
+  align-self: start;
   min-height: 680px;
   font-family: var(--mk-font-reading);
   line-height: 1.75;
