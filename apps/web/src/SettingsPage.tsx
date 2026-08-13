@@ -455,9 +455,17 @@ function AccountPanel({ onLogout }: { readonly onLogout: () => void | Promise<vo
           of V1.
         </p>
       </header>
-      <button type="button" className="secondary-action" onClick={onLogout}>
-        Sign out
-      </button>
+      <section className="settings-card account-actions-card">
+        <div className="setting-row account-signout-row">
+          <span>
+            <strong>Current session</strong>
+            <small>Sign out of Markora on this device.</small>
+          </span>
+          <button type="button" className="secondary-action" onClick={onLogout}>
+            Sign out
+          </button>
+        </div>
+      </section>
     </main>
   );
 }

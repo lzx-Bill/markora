@@ -1805,6 +1805,21 @@ button {
   display: grid;
   gap: 3px;
 }
+.account-actions-card {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+.account-signout-row {
+  min-height: 56px;
+  border-bottom: 0;
+}
+.account-signout-row small {
+  color: var(--mk-text-muted);
+  font-size: 12px;
+}
+.account-signout-row .secondary-action {
+  min-width: 96px;
+}
 .setting-row select,
 .setting-row input:not([type="checkbox"]) {
   width: min(260px, 45vw);
