@@ -260,37 +260,39 @@ export function DocumentWorkspace({
   return (
     <>
       <header className="document-header">
-        <div>
+        <div className="document-meta-row">
           <p className="document-path">
             {document.breadcrumbs.map((item) => item.name).join(" / ") || "Workspace root"}
           </p>
-          <h1>{document.name}</h1>
           <SaveIndicator status={status} revision={baseRevision} />
         </div>
-        <div className="document-actions">
-          <button
-            type="button"
-            onClick={() => {
-              setEditorFailure(null);
-              void downloadDocumentSource(document.id).catch((error) =>
-                setEditorFailure(error instanceof Error ? error.message : "Download failed."),
-              );
-            }}
-          >
-            Download .md
-          </button>
-          <button type="button" onClick={() => setHistoryOpen(true)}>
-            History
-          </button>
-          <button type="button" onClick={() => onMetadataAction("rename")}>
-            Rename
-          </button>
-          <button type="button" onClick={() => onMetadataAction("move")}>
-            Move
-          </button>
-          <button type="button" onClick={() => onMetadataAction("trash")}>
-            Trash
-          </button>
+        <div className="document-main-row">
+          <h1>{document.name}</h1>
+          <div className="document-actions">
+            <button
+              type="button"
+              onClick={() => {
+                setEditorFailure(null);
+                void downloadDocumentSource(document.id).catch((error) =>
+                  setEditorFailure(error instanceof Error ? error.message : "Download failed."),
+                );
+              }}
+            >
+              Download .md
+            </button>
+            <button type="button" onClick={() => setHistoryOpen(true)}>
+              History
+            </button>
+            <button type="button" onClick={() => onMetadataAction("rename")}>
+              Rename
+            </button>
+            <button type="button" onClick={() => onMetadataAction("move")}>
+              Move
+            </button>
+            <button type="button" onClick={() => onMetadataAction("trash")}>
+              Trash
+            </button>
+          </div>
         </div>
       </header>
 
