@@ -572,7 +572,7 @@ export class AdminService {
     const workerFresh = worker && Date.now() - worker.seenAt.getTime() <= 30_000;
     return {
       status: workerFresh ? "HEALTHY" : "DEGRADED",
-      apiVersion: process.env.npm_package_version ?? "0.0.0",
+      apiVersion: process.env.npm_package_version ?? "0.1.0-rc.1",
       databaseVersion: versionRows[0]?.version ?? "unknown",
       migrationCount: Number(migrationCount[0]?.count ?? 0),
       uptimeSeconds: Math.floor((Date.now() - processStartedAt) / 1000),

@@ -12,8 +12,8 @@ import {
   revokeOtherSessions,
   revokeSession,
 } from "./auth-api.js";
-import { GlobalCommandCenter } from "./GlobalCommandCenter.js";
 import { formatDateTime } from "./date.js";
+import { GlobalCommandCenter } from "./GlobalCommandCenter.js";
 import { ModalFocusGuard } from "./ModalFocusGuard.js";
 import { SearchPage } from "./SearchPage.js";
 import { PreferenceRuntime, SettingsPage } from "./SettingsPage.js";

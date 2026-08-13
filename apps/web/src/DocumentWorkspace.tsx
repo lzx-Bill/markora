@@ -2,6 +2,7 @@ import type { DocumentDetail } from "@markora/contracts";
 import { DEFAULT_AUTOSAVE_DEBOUNCE_MS, extractMarkdownOutline } from "@markora/markdown";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { formatDateTime } from "./date.js";
 import {
   createEmergencyDraft,
   deleteEmergencyDraftIfMatching,
@@ -12,7 +13,6 @@ import {
 } from "./draft-storage.js";
 import { type EditorMode, MarkdownPreview, SourceEditor, WysiwygEditor } from "./MarkdownEditor.js";
 import { readPreferenceSettings } from "./preferences.js";
-import { formatDateTime } from "./date.js";
 import { buildVersionDiffRows } from "./version-diff.js";
 import {
   downloadDocumentSource,

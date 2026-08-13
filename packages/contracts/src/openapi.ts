@@ -171,7 +171,7 @@ export const openApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "Markora API",
-    version: "0.0.0",
+    version: "0.1.0-rc.1",
     description: "Runtime contract for the Markora V1 API.",
   },
   servers: [{ url: "/api/v1" }],

@@ -36,6 +36,7 @@ export class PostgresSearchProvider implements SearchProvider {
       query.includeCodeBlocks ? '"search_vector_with_code"' : '"search_vector_no_code"',
     );
     const scope = this.scopeSql(query);
+    const containsPattern = `%${escapeLike(query.q)}%`;
     const rows = await this.database.client.$queryRaw<RawSearchRow[]>(Prisma.sql`
       WITH RECURSIVE folder_paths AS (
         SELECT
@@ -57,6 +58,32 @@ export class PostgresSearchProvider implements SearchProvider {
         JOIN folder_paths parent ON child.parent_id = parent.id
         WHERE child.workspace_id = ${workspaceId}::uuid
           AND child.state = 'ACTIVE'
+      ), document_matches AS MATERIALIZED (
+        SELECT document.id AS document_id
+        FROM documents document
+        WHERE document.workspace_id = ${workspaceId}::uuid
+          AND document.state = 'ACTIVE'
+          AND (
+            document.${searchVector} @@ plainto_tsquery('simple', ${query.q})
+            OR document.${searchText} ILIKE ${containsPattern} ESCAPE '\\'
+          )
+      ), path_matches AS MATERIALIZED (
+        SELECT document.id AS document_id
+        FROM documents document
+        LEFT JOIN folder_paths folder ON document.folder_id = folder.id
+        WHERE document.workspace_id = ${workspaceId}::uuid
+          AND document.state = 'ACTIVE'
+          AND (document.folder_id IS NULL OR folder.id IS NOT NULL)
+          AND (
+            CASE
+              WHEN document.folder_id IS NULL THEN '/' || document.name
+              ELSE folder.path || '/' || document.name
+            END
+          ) ILIKE ${containsPattern} ESCAPE '\\'
+      ), matched_documents AS (
+        SELECT document_id FROM document_matches
+        UNION
+        SELECT document_id FROM path_matches
       ), candidates AS (
         SELECT
           document.id AS document_id,
@@ -68,7 +95,8 @@ export class PostgresSearchProvider implements SearchProvider {
           document.markdown,
           document.${searchText} AS search_text,
           document.${searchVector} AS search_vector
-        FROM documents document
+        FROM matched_documents matched
+        JOIN documents document ON document.id = matched.document_id
         LEFT JOIN folder_paths folder ON document.folder_id = folder.id
         WHERE document.workspace_id = ${workspaceId}::uuid
           AND document.state = 'ACTIVE'
@@ -83,15 +111,12 @@ export class PostgresSearchProvider implements SearchProvider {
           (
             CASE WHEN lower(name) = lower(${query.q}) THEN 8 ELSE 0 END +
             CASE WHEN name ILIKE ${`${escapeLike(query.q)}%`} ESCAPE '\\' THEN 4 ELSE 0 END +
-            CASE WHEN path ILIKE ${`%${escapeLike(query.q)}%`} ESCAPE '\\' THEN 2 ELSE 0 END +
-            CASE WHEN search_text ILIKE ${`%${escapeLike(query.q)}%`} ESCAPE '\\' THEN 2 ELSE 0 END +
+            CASE WHEN path ILIKE ${containsPattern} ESCAPE '\\' THEN 2 ELSE 0 END +
+            CASE WHEN search_text ILIKE ${containsPattern} ESCAPE '\\' THEN 2 ELSE 0 END +
             ts_rank_cd(search_vector, plainto_tsquery('simple', ${query.q})) +
             similarity(search_text, ${query.q})
           )::double precision AS score
         FROM candidates
-        WHERE search_vector @@ plainto_tsquery('simple', ${query.q})
-           OR search_text ILIKE ${`%${escapeLike(query.q)}%`} ESCAPE '\\'
-           OR path ILIKE ${`%${escapeLike(query.q)}%`} ESCAPE '\\'
       )
       SELECT document_id, name, path, markdown, score
       FROM ranked

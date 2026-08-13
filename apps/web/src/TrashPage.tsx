@@ -1,8 +1,8 @@
 import type { BackgroundJob, Principal, TrashItem } from "@markora/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { flattenFolders, GlobalRail } from "./WorkspacePage.js";
 import { formatDateTime } from "./date.js";
+import { flattenFolders, GlobalRail } from "./WorkspacePage.js";
 import {
   getFolderTree,
   getJob,
