@@ -20,6 +20,7 @@ import {
   updateAdminUser,
 } from "./settings-api.js";
 import { GlobalRail } from "./WorkspacePage.js";
+import { formatDateTime } from "./date.js";
 
 const sections = ["overview", "users", "config", "security", "jobs", "audit", "system"] as const;
 
@@ -108,7 +109,7 @@ function Overview() {
                   </strong>
                   <small>
                     {issue.errorCode ?? "No error code"} ·{" "}
-                    {new Date(issue.occurredAt).toLocaleString()}
+                    {formatDateTime(issue.occurredAt)}
                   </small>
                 </span>
               </li>
@@ -581,7 +582,7 @@ function Audit() {
                 {event.action} · {event.result}
               </strong>
               <small>
-                {new Date(event.occurredAt).toLocaleString()} ·{" "}
+                {formatDateTime(event.occurredAt)} ·{" "}
                 {event.actor?.displayName ?? "System"} · request {event.requestId}
               </small>
               <code>{JSON.stringify(event.metadata)}</code>

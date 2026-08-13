@@ -12,6 +12,7 @@ import {
 } from "./draft-storage.js";
 import { type EditorMode, MarkdownPreview, SourceEditor, WysiwygEditor } from "./MarkdownEditor.js";
 import { readPreferenceSettings } from "./preferences.js";
+import { formatDateTime } from "./date.js";
 import { buildVersionDiffRows } from "./version-diff.js";
 import {
   downloadDocumentSource,
@@ -630,9 +631,7 @@ function formatVersionReason(reason: string): string {
 }
 
 function formatVersionDate(value: string): string {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(value),
-  );
+  return formatDateTime(value);
 }
 
 function SaveIndicator({
@@ -804,7 +803,5 @@ function downloadMarkdown(markdown: string, name: string) {
 }
 
 function formatTime(value: string): string {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(value),
-  );
+  return formatDateTime(value);
 }

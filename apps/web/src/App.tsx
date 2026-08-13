@@ -13,6 +13,7 @@ import {
   revokeSession,
 } from "./auth-api.js";
 import { GlobalCommandCenter } from "./GlobalCommandCenter.js";
+import { formatDateTime } from "./date.js";
 import { ModalFocusGuard } from "./ModalFocusGuard.js";
 import { SearchPage } from "./SearchPage.js";
 import { PreferenceRuntime, SettingsPage } from "./SettingsPage.js";
@@ -336,10 +337,7 @@ function SessionRow({
   readonly disabled: boolean;
   readonly onRevoke: () => void;
 }) {
-  const lastActive = new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(session.lastActiveAt));
+  const lastActive = formatDateTime(session.lastActiveAt);
   return (
     <li>
       <span className="session-device" aria-hidden="true">

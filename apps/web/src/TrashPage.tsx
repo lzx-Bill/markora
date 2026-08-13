@@ -2,6 +2,7 @@ import type { BackgroundJob, Principal, TrashItem } from "@markora/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { flattenFolders, GlobalRail } from "./WorkspacePage.js";
+import { formatDateTime } from "./date.js";
 import {
   getFolderTree,
   getJob,
@@ -195,7 +196,5 @@ export function TrashPage({
 }
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(value),
-  );
+  return formatDateTime(value);
 }

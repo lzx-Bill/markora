@@ -10,6 +10,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { DocumentWorkspace } from "./DocumentWorkspace.js";
 import { dispatchPortability, PortabilityCenter } from "./PortabilityCenter.js";
 import { readPreferenceSettings } from "./preferences.js";
+import { formatDate } from "./date.js";
 import {
   bulkDocuments,
   createDocument,
@@ -1053,7 +1054,7 @@ function formatRelative(value: string): string {
   if (minutes < 1) return "Just now";
   if (minutes < 60) return `${minutes}m ago`;
   if (minutes < 1_440) return `${Math.round(minutes / 60)}h ago`;
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
+  return formatDate(value);
 }
 
 function optimisticFolderUpdate(
