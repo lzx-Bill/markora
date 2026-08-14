@@ -19,7 +19,7 @@
     "@tanstack/react-query": "5.101.4",
     "codemirror": "6.0.2",
     "dompurify": "3.4.13",
-    "katex": "0.16.33",
+    "katex": "0.18.3",
     "mermaid": "11.16.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
