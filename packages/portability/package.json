@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@types/yauzl": "2.10.3",
-    "@types/yazl": "3.3.0",
+    "@types/yazl": "3.3.1",
     "tsup": "8.5.1"
   }
 }
