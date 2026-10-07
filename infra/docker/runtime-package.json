@@ -1,0 +1,9 @@
+{
+  "name": "@markora/runtime",
+  "version": "0.1.0-rc.1",
+  "private": true,
+  "scripts": {
+    "bootstrap:admin": "node /opt/markora/api/dist/bootstrap-admin.js",
+    "db:migrate": "node /opt/markora/migration/node_modules/prisma/build/index.js migrate deploy --config /opt/markora/migration/prisma.config.ts"
+  }
+}

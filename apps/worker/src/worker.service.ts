@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import { DatabaseService } from "./database.service.js";
 import { ImportExportRunner } from "./import-export.runner.js";
+import { LoginAttemptCleanupRunner } from "./login-attempt-cleanup.runner.js";
 import { PermanentDeletionRunner } from "./permanent-deletion.runner.js";
 
 @Injectable()
@@ -23,10 +24,12 @@ export class WorkerService implements OnModuleInit, OnApplicationShutdown {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(PermanentDeletionRunner) private readonly deletion: PermanentDeletionRunner,
     @Inject(ImportExportRunner) private readonly portability: ImportExportRunner,
+    @Inject(LoginAttemptCleanupRunner)
+    private readonly loginAttemptCleanup: LoginAttemptCleanupRunner,
   ) {}
 
   public onModuleInit(): void {
-    this.logger.log("Worker ready with restart-safe deletion, import and export jobs.");
+    this.logger.log("Worker ready with deletion, import, export, and auth cleanup jobs.");
     void this.tick();
     this.heartbeat = setInterval(() => void this.tick(), this.config.WORKER_POLL_MS);
   }
@@ -46,15 +49,20 @@ export class WorkerService implements OnModuleInit, OnApplicationShutdown {
           instance: this.instance,
           startedAt: this.startedAt,
           seenAt: new Date(),
-          metadata: { capabilities: ["deletion", "import", "export"] },
+          metadata: { capabilities: ["deletion", "import", "export", "auth-cleanup"] },
         },
         update: {
           instance: this.instance,
           startedAt: this.startedAt,
           seenAt: new Date(),
-          metadata: { capabilities: ["deletion", "import", "export"] },
+          metadata: { capabilities: ["deletion", "import", "export", "auth-cleanup"] },
         },
       });
+      try {
+        await this.loginAttemptCleanup.runMaintenanceOnce();
+      } catch (error) {
+        this.logger.error("Login-attempt cleanup failed", error);
+      }
       await this.deletion.runMaintenanceOnce();
       await this.portability.runMaintenanceOnce();
       while (await this.deletion.runOnce()) {

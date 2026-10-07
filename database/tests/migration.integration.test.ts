@@ -48,6 +48,20 @@ describe("empty-to-current migration", () => {
     expect(result.rows.map((row) => row.migration_name)).toContain(
       "20260813000800_phase_7_settings_admin_audit",
     );
+    expect(result.rows.map((row) => row.migration_name)).toContain(
+      "20261007000900_login_attempt_retention",
+    );
+  });
+
+  it("installs the ordered login-attempt expiration index", async () => {
+    const indexes = await pool.query<{ indexname: string; indexdef: string }>(
+      `SELECT indexname, indexdef FROM pg_indexes
+       WHERE schemaname = 'public' AND tablename = 'login_attempts'
+         AND indexname = 'login_attempts_window_start_id_idx'`,
+    );
+
+    expect(indexes.rows).toHaveLength(1);
+    expect(indexes.rows[0]?.indexdef).toContain("(window_start, id)");
   });
 
   it("supports a transaction without leaving test data", async () => {

@@ -61,7 +61,7 @@ services:
 
   api:
     <<: *app-image
-    command: ["pnpm", "--filter", "@markora/api", "start"]
+    command: ["node", "/opt/markora/api/dist/main.js"]
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -79,17 +79,16 @@ services:
 
   worker:
     <<: *app-image
-    command: ["pnpm", "--filter", "@markora/worker", "start"]
+    command: ["node", "/opt/markora/worker/dist/main.js"]
     depends_on:
       migrate:
         condition: service_completed_successfully
 
   web:
     <<: *app-image
-    command: ["pnpm", "--filter", "@markora/web", "preview"]
+    command: ["node", "/opt/markora/web/server.mjs"]
     tmpfs:
       - /tmp:size=64m,mode=1777
-      - /opt/markora/apps/web/node_modules/.vite-temp:size=16m,mode=0755,uid=10001,gid=10001
     depends_on:
       api:
         condition: service_healthy

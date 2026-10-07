@@ -31,7 +31,11 @@ import { Inject, Injectable } from "@nestjs/common";
 import { DatabaseService } from "../database/database.service.js";
 import { CodedHttpException } from "../http/coded-http.exception.js";
 import { RuntimeConfigService } from "../runtime-config/runtime-config.service.js";
-import { ContentRepository, visibleFolders } from "./content.repository.js";
+import {
+  ContentRepository,
+  type DocumentListRecord,
+  visibleFolders,
+} from "./content.repository.js";
 
 @Injectable()
 export class ContentService {
@@ -249,13 +253,9 @@ export class ContentService {
   }
 
   public async listDocuments(principal: Principal, folderId: string | null): Promise<DocumentList> {
-    if (
-      folderId !== null &&
-      !(await this.repository.findVisibleFolder(principal.workspaceId, folderId))
-    ) {
-      this.throwNotFound("Folder");
-    }
-    const documents = await this.repository.listDocuments(principal.workspaceId, folderId);
+    const result = await this.repository.listDocuments(principal.workspaceId, folderId);
+    if (!result.folderVisible) this.throwNotFound("Folder");
+    const documents = result.documents;
     return { data: documents.map(documentSummary) };
   }
 
@@ -618,7 +618,7 @@ export class ContentService {
   }
 
   private async documentDetailFrom(
-    document: Parameters<typeof documentSummary>[0],
+    document: DocumentListRecord & { markdown: string },
     workspaceId: string,
   ): Promise<DocumentDetail> {
     const breadcrumbs: Array<{ id: string; name: string }> = [];
@@ -852,15 +852,7 @@ function folderDto(folder: {
   };
 }
 
-function documentSummary(document: {
-  id: string;
-  folderId: string | null;
-  name: string;
-  revision: number;
-  markdown: string;
-  createdAt: Date;
-  updatedAt: Date;
-}): DocumentSummary {
+function documentSummary(document: DocumentListRecord): DocumentSummary {
   return {
     id: document.id,
     folderId: document.folderId,

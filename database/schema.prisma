@@ -410,5 +410,6 @@ model LoginAttempt {
 
   @@unique([subjectHash, networkHash, windowStart])
   @@index([blockedUntil])
+  @@index([windowStart, id])
   @@map("login_attempts")
 }

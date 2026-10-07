@@ -4,19 +4,20 @@ import { Inject, Injectable } from "@nestjs/common";
 import { DatabaseService } from "../database/database.service.js";
 
 type ReadClient = Pick<Prisma.TransactionClient, "folder" | "document" | "workspace">;
+type FolderLocation = Pick<Folder, "id" | "parentId">;
+export type DocumentListRecord = Pick<
+  Document,
+  "id" | "folderId" | "name" | "revision" | "createdAt" | "updatedAt"
+>;
 
-export async function visibleFolders(client: ReadClient, workspaceId: string): Promise<Folder[]> {
-  const folders = await client.folder.findMany({
-    where: { workspaceId, state: ResourceState.ACTIVE },
-    orderBy: [{ normalizedName: "asc" }, { id: "asc" }],
-  });
-  const children = new Map<string | null, Folder[]>();
+function reachableFolders<TFolder extends FolderLocation>(folders: TFolder[]): TFolder[] {
+  const children = new Map<string | null, TFolder[]>();
   for (const folder of folders) {
     const siblings = children.get(folder.parentId) ?? [];
     siblings.push(folder);
     children.set(folder.parentId, siblings);
   }
-  const reachable: Folder[] = [];
+  const reachable: TFolder[] = [];
   const queue = [...(children.get(null) ?? [])];
   for (let index = 0; index < queue.length; index += 1) {
     const folder = queue[index];
@@ -25,6 +26,14 @@ export async function visibleFolders(client: ReadClient, workspaceId: string): P
     queue.push(...(children.get(folder.id) ?? []));
   }
   return reachable;
+}
+
+export async function visibleFolders(client: ReadClient, workspaceId: string): Promise<Folder[]> {
+  const folders = await client.folder.findMany({
+    where: { workspaceId, state: ResourceState.ACTIVE },
+    orderBy: [{ normalizedName: "asc" }, { id: "asc" }],
+  });
+  return reachableFolders(folders);
 }
 
 @Injectable()
@@ -42,12 +51,33 @@ export class ContentRepository {
     );
   }
 
-  public async listDocuments(workspaceId: string, folderId: string | null): Promise<Document[]> {
-    if (folderId !== null && !(await this.findVisibleFolder(workspaceId, folderId))) return [];
-    return this.database.client.document.findMany({
+  public async listDocuments(
+    workspaceId: string,
+    folderId: string | null,
+  ): Promise<{ folderVisible: boolean; documents: DocumentListRecord[] }> {
+    if (folderId !== null) {
+      const folderLocations = await this.database.client.folder.findMany({
+        where: { workspaceId, state: ResourceState.ACTIVE },
+        select: { id: true, parentId: true },
+      });
+      if (!reachableFolders(folderLocations).some((folder) => folder.id === folderId)) {
+        return { folderVisible: false, documents: [] };
+      }
+    }
+
+    const documents = await this.database.client.document.findMany({
       where: { workspaceId, folderId, state: ResourceState.ACTIVE },
       orderBy: [{ updatedAt: "desc" }, { normalizedName: "asc" }],
+      select: {
+        id: true,
+        folderId: true,
+        name: true,
+        revision: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
+    return { folderVisible: true, documents };
   }
 
   public async findVisibleDocument(

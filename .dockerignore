@@ -5,8 +5,17 @@
 !.env.example
 **/dist
 **/node_modules
+**/coverage
+**/integration
+**/tests
+**/test
 database/generated
 output
 tmp
 artifacts/acceptance/**/actual
+artifacts
+docs
+tests
+markora-spec
+.github
 *.log

@@ -1,2 +1,2 @@
 /** Latest forward migration required by this application build. */
-export const CURRENT_MIGRATION = "20260813000800_phase_7_settings_admin_audit";
+export const CURRENT_MIGRATION = "20261007000900_login_attempt_retention";
